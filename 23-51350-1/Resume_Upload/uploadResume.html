@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Resume Uploader</title>
+  </head>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js"></script>
+  <body>
+    <form
+      action="/Dashboard.html"
+      method="post"
+      enctype="multipart/form-data"
+      onsubmit="return resumeUpload()"
+    >
+      <table class="standardTable">
+        <tr>
+          <td style="padding: 3%">
+            <input
+              type="file"
+              name="resumeFile"
+              value="resumeFile"
+              id="resumeFile"
+            />
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 3%">
+            <input type="button" value="Submit" class="resume-button" />
+          </td>
+        </tr>
+      </table>
+    </form>
+  </body>
+</html>
