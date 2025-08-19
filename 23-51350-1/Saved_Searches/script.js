@@ -1,0 +1,3 @@
+function toggleRefresh() {
+    return true;
+}
