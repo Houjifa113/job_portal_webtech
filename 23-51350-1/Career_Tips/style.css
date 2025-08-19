@@ -1,0 +1,27 @@
+body {
+    background-color: #252525;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+.standardTable {
+    width: 80%;
+    text-align: center;
+    border: 1px solid #FF0000;
+    margin: 10%;
+    border-radius: 20px;
+    padding: 3%;
+    background-color: #333333;
+}
+
+
+.tips-button {
+    background-color: #FF0000;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    width: 70%;
+}
