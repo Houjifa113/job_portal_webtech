@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Job Portal - Login/Register</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fd;
+      color: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .form-container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 350px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: black;
+    }
+
+    p {
+      text-align: center;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    p a {
+      color: blue;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    label {
+      font-size: 14px;
+      margin-top: 10px;
+      display: block;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: blue;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .error {
+      color: red;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .small-text {
+      font-size: 13px;
+      color: #555;
+      margin-top: 15px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="loginForm" class="form-container">
+    <h2>Welcome back</h2>
+    <p>Don’t have an account? <a href="#" onclick="showRegister()">Sign up</a></p>
+
+    <label>Email address</label>
+    <input type="email" id="loginEmail" placeholder="Enter your email">
+    <div id="loginEmailError" class="error"></div>
+
+    <label>Password</label>
+    <input type="password" id="loginPassword" placeholder="Enter your password">
+    <div id="loginPassError" class="error"></div>
+
+    <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+      <label style="display:flex; align-items:center; gap:5px; font-size:13px;">
+        <input type="checkbox"> Remember me
+      </label>
+      <a href="#" style="font-size:13px; color:blue;">Forgot password?</a>
+    </div>
+
+
+    <button onclick="validateLogin()">Sign in</button>
+  </div>
+
+  <div id="registerForm" class="form-container hidden">
+    <h2>Create your account</h2>
+    <p>Already have an account? <a href="#" onclick="showLogin()">Sign in</a></p>
+
+    <label>Full name</label>
+    <input type="text" id="regName" placeholder="Enter your full name">
+    <div id="regNameError" class="error"></div>
+
+    <label>Email address</label>
+    <input type="email" id="regEmail" placeholder="Enter your email">
+    <div id="regEmailError" class="error"></div>
+
+    <label>I’m looking to</label>
+    <select id="regRole">
+      <option value="">Select one</option>
+      <option value="Job Seeker">Find a job</option>
+      <option value="Employer">Hire talent</option>
+      <option value="Admin">Admin</option>
+    </select>
+    <div id="regRoleError" class="error"></div>
+
+    <label>Password</label>
+    <input type="password" id="regPass" placeholder="Create a password">
+    <div id="regPassError" class="error"></div>
+
+    <label>Confirm password</label>
+    <input type="password" id="regConfirm" placeholder="Confirm your password">
+    <div id="regConfirmError" class="error"></div>
+
+    <button onclick="validateRegister()">Create account</button>
+    <p class="small-text">By creating an account, you agree to our <a href="#">Terms of Service</a> and <a
+        href="#">Privacy Policy</a></p>
+  </div>
+
+  <script>
+    function showLogin() {
+      document.getElementById("registerForm").classList.add("hidden");
+      document.getElementById("loginForm").classList.remove("hidden");
+    }
+    function showRegister() {
+      document.getElementById("loginForm").classList.add("hidden");
+      document.getElementById("registerForm").classList.remove("hidden");
+    }
+
+    function validateLogin() {
+      let email = document.getElementById("loginEmail").value.trim();
+      let pass = document.getElementById("loginPassword").value.trim();
+      let valid = true;
+
+      document.getElementById("loginEmailError").textContent = "";
+      document.getElementById("loginPassError").textContent = "";
+
+      if (email === "") {
+        document.getElementById("loginEmailError").textContent = "Email is required";
+        valid = false;
+      }
+      if (pass === "") {
+        document.getElementById("loginPassError").textContent = "Password is required";
+        valid = false;
+      }
+      if (valid) {
+        alert("Login successful!");
+      }
+    }
+
+    function validateRegister() {
+      let name = document.getElementById("regName").value.trim();
+      let email = document.getElementById("regEmail").value.trim();
+      let role = document.getElementById("regRole").value;
+      let pass = document.getElementById("regPass").value.trim();
+      let confirm = document.getElementById("regConfirm").value.trim();
+      let valid = true;
+
+      document.getElementById("regNameError").textContent = "";
+      document.getElementById("regEmailError").textContent = "";
+      document.getElementById("regRoleError").textContent = "";
+      document.getElementById("regPassError").textContent = "";
+      document.getElementById("regConfirmError").textContent = "";
+
+      if (name === "") {
+        document.getElementById("regNameError").textContent = "Full name is required";
+        valid = false;
+      }
+      if (email === "") {
+        document.getElementById("regEmailError").textContent = "Email is required";
+        valid = false;
+      }
+      if (role === "") {
+        document.getElementById("regRoleError").textContent = "Please select a role";
+        valid = false;
+      }
+      if (pass === "") {
+        document.getElementById("regPassError").textContent = "Password is required";
+        valid = false;
+      }
+      if (confirm !== pass) {
+        document.getElementById("regConfirmError").textContent = "Passwords do not match";
+        valid = false;
+      }
+
+      if (valid) {
+        alert("Registration successful!");
+        showLogin();
+      }
+    }
+  </script>
+
+</body>
+
+</html>
