@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>User Authentication</title>
+  </head>
+  <body>
+    <h1>User Authentication</h1>
+
+    <!--Toggle Buttons-->
+    <button id="showLogin" onclick="showlogin()">Login</button>
+    <button id="showSignup" onclick="showsignup()">Sign Up</button>
+
+    <!--Login Form-->
+    <div>
+      <form id="login" onsubmit="return login()">
+      <input type="email" id="loginEmail" placeholder="Email" name="email"><br>
+      <p id="emailerror" class="error"></p>
+
+      <input type="password" id="loginPassword" placeholder="Password" name="password"><br>
+      <p id="passerror" class="error"></p>
+       <button type="submit">Login</button>
+    </form>
+     
+  </div>
+
+  <!-- Signup Form -->
+  <div id="signupForm" >
+    <h2>Sign Up</h2>
+    <form id="signup" onsubmit="return signup()">
+      <input type="text" id="signupName" placeholder="Full Name" name="signupname" ><br>
+      <p id="sname" class="error"></p>
+      <input type="email" id="signupEmail" placeholder="Email" name="signupemail" ><br>
+      <p id="semail" class="error"></p>
+      <input type="password" id="signupPassword" placeholder="Password" name="signuppassword"><br>
+       <p id="spass" class="error"></p>
+ <input type="password" id="confirmpassword" placeholder="confirmpassword" name="confirmpassword"><br>
+       <p id="cpass" class="error"></p>
+
+
+      <button type="submit">Sign Up</button>
+    </form>
+   
+  </div>
+    
+<script src="userauth.js"></script>
+  </body>
+  
+</html>

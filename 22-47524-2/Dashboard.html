@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Dashboard</title>
+
+    <style>
+      body { font-family: Arial; margin: 20px; }
+      .widget {
+        border: 1px solid #ccc;
+        padding: 15px;
+        margin: 10px;
+        display: inline-block;
+        width: 200px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Welcome, Job Seeker!</h1>
+
+    <section>
+      <h2>Quick Actions</h2>
+      <a href="scheduling.html"><button>Schedule an Interview</button></a>
+       <a href="tracking.html"><button>Track My Applications</button></a>
+        <a href="jobs.html"><button>Search for jobs</button></a>
+
+    </section>
+
+    <section>
+     <h2>Your Summary </h2>
+
+      <div class="widget">
+            <h3>Jobs Applied</h3>
+            <p id="jobsAppliedCount">0</p>
+        </div>
+
+       <div class="widget">
+            <h3>Upcoming Interviews</h3>
+            <p id="interviewsCount">0</p>
+        </div>
+        
+        <div class="widget">
+            <h3>Applications Viewed</h3>
+            <p id="viewsCount">0</p>
+        </div>
+
+    </section>
+
+    <section>
+        <h2>Recent Activity</h2>
+        <ul id="activityList">
+            <li>No recent activity</li>
+        </ul>
+    </section>
+
+  
+    <script src="Dashboard.js"></script>
+  </body>
+</html>
