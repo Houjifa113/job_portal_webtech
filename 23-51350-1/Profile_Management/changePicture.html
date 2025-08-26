@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Profile Manager</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <img id="profilePictureImage" src=""  />
+    <a href="/home.html"
+      ><input
+        type="button"
+        value="Home"
+        id="home"
+        class="profile-button"
+        style="position: absolute; left: 2%; top: 2%; width: 8%"
+    /></a>
+    <table class="standardTable">
+        <form enctype="multipart/form-data" method="post" onsubmit="return validateProfilePic()">
+      <tr>
+        <td style="padding: 3%">
+          <input type="file" name="profilePicture" id="profilePicture" />
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 3%"><input type="submit" value="Submit" class="profile-button"/></td>
+      </tr>
+    </form>
+    </table>
+    <script src="script.js"></script>
+  </body>
+</html>

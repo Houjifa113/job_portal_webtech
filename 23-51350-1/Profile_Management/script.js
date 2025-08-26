@@ -1,0 +1,4 @@
+function validateProfilePic()
+{
+    return false;
+}

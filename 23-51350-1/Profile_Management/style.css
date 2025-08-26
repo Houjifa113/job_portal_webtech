@@ -4,6 +4,15 @@ body {
     color: white;
 }
 
+#profilePictureImage {
+    position: absolute;
+    left: 45%;
+    top: 2%;
+    width: 90px;
+    height: 90px;
+    border-radius: 75px;
+}
+
 .standardTable {
     width: 80%;
     text-align: center;
