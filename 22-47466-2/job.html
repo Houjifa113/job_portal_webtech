@@ -7,11 +7,11 @@
   <link rel="stylesheet" href="search.css">
 </head>
 <body>
-  <form action="exp.html" onsubmit="return validation()">
+  <form action="job.html">
     <table>
       <tr>
         <td>
-          <!-- Flex container for search + preference side by side -->
+        
           <div class="search-container">
             <input type="search" name="search" id="search" placeholder="Enter job name...">
             <select name="preference" id="preference">
@@ -22,24 +22,24 @@
             </select>
           </div>
           <br>
-          <!-- Validation errors -->
+        
           <span id="search_bar_error" class="sError_msg"></span>
           <span id="preference_error" class="pError_msg"></span>
           <br>
-          <!-- Search button -->
+        
           <input type="submit" value="Search">
         </td>
       </tr>
 
       <tr>
         <td>
-          <!-- Job list and pagination -->
+      
           <div id="job_list"></div>
           <div id="pagination"></div>
         </td>
       </tr>
     </table>
-    <script src="exp.js"></script>
+    <script src="search_bar.js"></script>
   </form>
 </body>
 </html>
