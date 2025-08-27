@@ -4,6 +4,33 @@ body {
     color: white;
 }
 
+#viewProfilePictureImage {
+    position: relative;
+    left: 45%;
+    top: 2%;
+    width: 90px;
+    height: 90px;
+    border-radius: 75px;
+}
+#viewProfilePictureImage:hover {
+    filter: blur(2px);
+}
+#profile-picture-overlay {
+    position: absolute;
+    left: 45%;
+    top: 2%;
+    width: 90px;
+    height: 90px;
+    border-radius: 75px;
+    text-align: center;
+    color: azure;
+    opacity: 0;
+}
+
+#profile-picture-overlay:hover {
+    opacity: 1;
+}
+
 #profilePictureImage {
     position: absolute;
     left: 45%;
@@ -15,12 +42,46 @@ body {
 
 .standardTable {
     width: 80%;
-    text-align: center;
+    position: relative;
+    top: 40%;
+    margin: 40px auto 0 auto;
     border: 1px solid #FF0000;
-    margin: 10%;
-    border-radius: 20px;
-    padding: 3%;
+    border-radius: 10px;
+    padding: 2%;
     background-color: #333333;
+    color: white;
+    font-size: 16px;
+    text-align: left;
+}
+
+.standardTable td {
+    padding: 8px 10px;
+    border: none;
+}
+.standardTable label {
+    font-weight: normal;
+    color: #fff;
+}
+.standardTable input[type="text"],
+.standardTable input[type="email"],
+.standardTable textarea {
+    width: 95%;
+    padding: 6px 8px;
+    border: 1px solid #888;
+    border-radius: 4px;
+    font-size: 15px;
+    background: #222;
+    color: #fff;
+    box-sizing: border-box;
+}
+.standardTable textarea {
+    min-height: 40px;
+    resize: vertical;
+}
+#profileError {
+    color: #FF7070;
+    font-size: 15px;
+    padding-left: 5px;
 }
 
 
