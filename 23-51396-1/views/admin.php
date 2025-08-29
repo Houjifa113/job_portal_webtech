@@ -1,8 +1,45 @@
+<?php
+session_start();
+
+// redirect if not logged in
+if (!isset($_SESSION['username']) || !isset($_SESSION['role'])) {
+    header("Location: login.php");
+    exit;
+}
+
+$username = $_SESSION['username'];
+$role = $_SESSION['role'];
+
+$successMsg = "";
+$errorMsg = "";
+
+// --- Handle Add User Form Submission ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['addUser'])) {
+    $newUsername = trim($_POST['newUsername']);
+    $newRole = trim($_POST['newRole']);
+
+    if ($newUsername === "" || $newRole === "") {
+        $errorMsg = "⚠️ Both fields are required!";
+    } else {
+        // In real case save to DB, here just simulate success
+        $successMsg = "✅ User '$newUsername' with role '$newRole' added successfully!";
+    }
+}
+
+// --- Handle Logout ---
+if (isset($_GET['logout'])) {
+    session_destroy();
+    setcookie("username", "", time() - 3600, "/");
+    setcookie("password", "", time() - 3600, "/");
+    header("Location: login.php");
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard</title>
+    <title><?= ucfirst($role) ?> Dashboard</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -82,14 +119,16 @@
             margin: 0;
             color: #4b5563;
         }
-
-        /* style hocche na */
-        p[id="Error"] {
+        p[id$="Error"], .error {
             color: red;
-            font-size: 14px;       
+            font-size: 14px;
             margin: 4px 0;
         }
-       
+        .success {
+            color: green;
+            font-size: 14px;
+        }
+        
         @media screen and (max-width: 600px) {
             .sidebar {
                 position: relative;
@@ -107,8 +146,8 @@
 <body>
 
 <div class="header">
-    <h2>Admin Dashboard</h2>
-    <button class="logout-btn" onclick="logout()">Logout</button>
+    <h2><?= ucfirst($role) ?> Dashboard - Welcome, <?= htmlspecialchars($username) ?></h2>
+    <button class="logout-btn" onclick="window.location.href='?logout=true'">Logout</button>
 </div>
 
 <div class="sidebar">
@@ -120,7 +159,6 @@
 </div>
 
 <div class="main">
-    <!-- Overview Section -->
     <div id="overview">
         <h3>Overview</h3>
         <div class="card">
@@ -141,17 +179,24 @@
         </div>
     </div>
 
-    <!-- Manage Users Section -->
     <div id="manageUsers" style="display:none;">
         <h3>Manage Users</h3>
-        <p>You can add, edit or remove users here.</p>
-        <form id="addUserForm" onsubmit="return validateAddUser()">
+
+        <?php if ($errorMsg): ?>
+            <p class="error"><?= $errorMsg ?></p>
+        <?php endif; ?>
+
+        <?php if ($successMsg): ?>
+            <p class="success"><?= $successMsg ?></p>
+        <?php endif; ?>
+
+        <form id="addUserForm" method="post" onsubmit="return validateAddUser()">
             <label for="newUsername">Username:</label><br>
-            <input type="text" id="newUsername"><br>
+            <input type="text" id="newUsername" name="newUsername"><br>
             <p id="usernameError"></p>
 
             <label for="newRole">Role:</label><br>
-            <select id="newRole">
+            <select id="newRole" name="newRole">
                 <option value="">--Select--</option>
                 <option value="admin">Admin</option>
                 <option value="employer">Employer</option>
@@ -159,11 +204,10 @@
             </select><br>
             <p id="roleError"></p>
 
-            <input type="submit" value="Add User">
+            <input type="submit" name="addUser" value="Add User">
         </form>
     </div>
 
-    <!-- Reports Section -->
     <div id="reports" style="display:none;">
         <h3>Reports</h3>
         <p>View system statistics and reports here.</p>
@@ -183,11 +227,6 @@ function showSection(section) {
     document.getElementById(section).style.display = 'block';
 }
 
-function logout() {
-    alert('You have been logged out.');
-    window.location.href = 'login.html';
-}
-
 function validateAddUser() {
     const username = document.getElementById('newUsername').value.trim();
     const role = document.getElementById('newRole').value;
@@ -205,12 +244,7 @@ function validateAddUser() {
         valid = false;
     }
 
-    if (valid) {
-        alert("User added successfully!");
-        document.getElementById('addUserForm').reset();
-    }
-
-    return false; 
+    return valid;
 }
 </script>
 

@@ -1,3 +1,13 @@
+<?php
+session_start();
+
+// ✅ Server-side validation: only jobseeker can access
+if (!isset($_SESSION['status']) || $_SESSION['status'] !== true || $_SESSION['username'] !== "jobseeker") {
+    header("Location: login.php?error=unauthorized");
+    exit;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +38,7 @@
         .logout-btn {
             padding: 6px 12px;
             border: none;
-            margin-right: 30px; 
+            margin-right: 30px; /* move left */
             border-radius: 4px;
             background-color: #ef4444;
             color: white;
@@ -39,7 +49,7 @@
             background-color: #1e293b;
             height: 100vh;
             position: fixed;
-            top: 60px; 
+            top: 60px; /* below header */
             left: 0;
             padding-top: 20px;
             color: white;
@@ -57,7 +67,7 @@
         }
         .main {
             margin-left: 220px;
-            padding: 80px 20px 20px; 
+            padding: 80px 20px 20px; /* extra padding for fixed header */
         }
         .card {
             display: inline-block;
@@ -120,7 +130,9 @@
 
 <div class="header">
     <h2>Job Seeker Dashboard</h2>
-    <button class="logout-btn" onclick="logout()">Logout</button>
+    <form method="post" action="logout.php" style="margin:0;">
+        <button type="submit" class="logout-btn">Logout</button>
+    </form>
 </div>
 
 <div class="sidebar">
@@ -133,6 +145,7 @@
 </div>
 
 <div class="main">
+    <!-- Overview -->
     <div id="overview">
         <h3>Overview</h3>
         <div class="card">
@@ -149,6 +162,7 @@
         </div>
     </div>
 
+    <!-- Browse Jobs -->
     <div id="browseJobs" style="display:none;">
         <h3>Browse Jobs</h3>
         <table>
@@ -187,6 +201,7 @@
         </table>
     </div>
 
+    <!-- Applied Jobs -->
     <div id="appliedJobs" style="display:none;">
         <h3>My Applications</h3>
         <table>
@@ -205,6 +220,7 @@
         </table>
     </div>
 
+    <!-- Notifications -->
     <div id="notifications" style="display:none;">
         <h3>Notifications</h3>
         <div id="notificationList">
@@ -220,11 +236,6 @@ function showSection(section) {
     document.getElementById('appliedJobs').style.display = 'none';
     document.getElementById('notifications').style.display = 'none';
     document.getElementById(section).style.display = 'block';
-}
-
-function logout() {
-    alert('You have been logged out.');
-    window.location.href = 'login.html';
 }
 
 function applyJob(btn) {
