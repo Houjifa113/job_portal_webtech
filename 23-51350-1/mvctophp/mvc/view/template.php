@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Resume manager</title>
+    <link rel="stylesheet" href="../asset/style.css">
+    <style>
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 2%;
+            margin-top: 5%;
+        }
+        .textarea-box {
+            width: 95%;
+            height: 400px;
+            resize: vertical;
+            padding: 6px 8px;
+            border: 1px solid #888;
+            border-radius: 4px;
+            font-size: 15px;
+            background: #222;
+            color: #fff;
+            box-sizing: border-box;
+        }
+        .standardTable {
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <a href="./home.php"><input type="button" value="Home" id="home" class="resume-button" style="position: absolute;left: 2%;top: 2%;width: 8%;"></a>
+    <div class="container">
+        <textarea class="textarea-box" placeholder="Resume Template"></textarea>
+        <textarea class="textarea-box" placeholder="Markdown or LaTeX Output"></textarea>
+    </div>
+    <br>
+    <br>
+    <table class="standardTable">
+        <tr>
+            <td></td>
+            <td style="padding-left: 20px;">
+                <input type="button" value="Download CV" id="downloadCV" class="resume-button">
+            </td>
+        </tr>
+    </table>
+</body>
+<script src="../asset/script.js"></script>
+</html>
