@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Saved Searches</title>
+    <title>Career Tips</title>
   </head>
   <link rel="stylesheet" href="../asset/style.css" />
   <body>
