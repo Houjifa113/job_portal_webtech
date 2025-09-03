@@ -1,6 +1,6 @@
-var testUser = ["test","test@aiub.edu", "14567897"];
 
-document.getElementById("login").style.display='none';
+
+document.getElementById("login").style.display='block';
 document.getElementById("signupForm").style.display='none';
 
 //for showing up the login screen
@@ -69,23 +69,9 @@ function login(){
     passerr.innerHTML = "";
   }
 
-   //  Check the input against our hardcoded test user
-    if (email == testUser[1] && password == testUser[2]) {
-        
-        alert("Login Successful! Welcome.");
-        <a href="Dashboard.html"></a>
+  
 
-        
-        return true;
-    } 
-    
-    else {
-
-        alert("Incorrect email and password.Please try again!")
-        return false;
-    }
-
-  return true; 
+  
   
 
 }
@@ -172,7 +158,9 @@ function signup(){
    else{
     confirmerr.innerHTML="";
    }
+   alert("Signup Successful! Please login with your new account.");
+    showlogin(); 
 
-   return true;
+   return false;
 }
 
