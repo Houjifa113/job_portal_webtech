@@ -1,5 +1,5 @@
 <?php
-    session_start();
+    /*session_start();
     if(isset($_SESSION['status'])){
         if($_SESSION['status'] != 'valid'){
             header('location: login.php?error=badrequest');
@@ -14,7 +14,7 @@
         }
     }else{
         header('location: login.php?error=badrequest');
-    }
+    }*/
 ?>
 
 <!DOCTYPE html>

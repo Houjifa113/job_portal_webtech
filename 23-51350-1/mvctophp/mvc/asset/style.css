@@ -36,8 +36,6 @@ body {
     color: #fff;
 }
 .standardTable input[type="text"],
-.standardTable input[type="password"],
-.standardTable input[type="file"],
 .standardTable input[type="email"],
 .standardTable textarea {
     width: 95%;

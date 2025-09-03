@@ -15,6 +15,7 @@
     }else{
         header('location: login.php?error=badrequest');
     }
+    $msg = $_GET['msg'];
 ?>
 
 <!DOCTYPE html>
@@ -26,7 +27,7 @@
 <body>
     <a href="./home.php"><input type="button" value="Home" id="home" class="profile-button" style="position: absolute;left: 2%;top: 2%;width: 8%;"></a>
 <table class="standardTable">
-    <form id="updatePasswordForm" onsubmit="return validatePasswords()" method="post" action="#">
+    <form id="updatePasswordForm" onsubmit="return validatePasswords()" method="post" action="../controller/updatePasswordCheck.php">
         <tr>
             <td style="padding: 3%;" ><label for="password0">Old Password:</label></td>
             <td><input type="password" id="password0" name="password0" ></td>
@@ -53,7 +54,19 @@
 </table>
 
     <script>
+    
+    let msg = "<?php echo $msg ?>";
+    if(msg==='okay'){
+        document.getElementById('errorMsg').textContent = 'Password updated successfully.';
+        document.getElementById('errorMsg').style.color = 'green';
+       }
+    else {
+        document.getElementById('errorMsg').textContent = msg;
+        document.getElementById('errorMsg').style.color = 'red';
+       }
+
     function validatePasswords() {
+        
         let p0 = document.getElementById('password0').value;
         let p1 = document.getElementById('password1').value;
         let p2 = document.getElementById('password2').value;
@@ -71,13 +84,11 @@
         if (p1 === p2) {
             if(p1===p0)
             {
-            errorMsg.textContent = 'New password cannot be the same as old password.';
+                errorMsg.textContent = 'New password cannot be the same as old password.';
                 errorMsg.style.color = 'red';
                 return false;
             }
-            errorMsg.textContent = 'Password updated successfully.';
-            errorMsg.style.color = 'green';
-            return false;
+            return true;
         } else {
             errorMsg.textContent = 'Passwords invalid, please try again.';
             errorMsg.style.color = 'red';

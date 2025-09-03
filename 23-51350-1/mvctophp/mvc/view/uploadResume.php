@@ -15,6 +15,12 @@
     }else{
         header('location: login.php?error=badrequest');
     }
+    $msg="";
+    if(isset($_GET['msg'])){
+        if($_GET['msg'] == 'success'){
+            $msg = "File uploaded successfully!";
+        }
+    }
 ?>
 
 <!DOCTYPE html>
@@ -23,11 +29,11 @@
     <title>Resume Uploader</title>
   </head>
   <link rel="stylesheet" href="../asset/style.css" />
-  <script src="../asset/script.js"></script>
+  
   <body>
     <a href="./home.php"><input type="button" value="Home" id="home" class="tips-button" style="position: absolute;left: 2%;top: 2%;width: 8%;"></a>
     <form
-      action="#"
+      action="../controller/uploadResumeCheck.php"
       method="post"
       enctype="multipart/form-data"
       onsubmit="return resumeUpload()"
@@ -54,4 +60,33 @@
       </table>
     </form>
   </body>
+  <script >
+
+    let msg="<?php echo $msg; ?>";
+    
+    let fileInput = document.getElementById('resumeFile');
+    let fileError= document.getElementById('resumeFileError');
+    if(msg==='File uploaded successfully!'){
+        fileError.innerHTML = msg;
+        fileError.style.color = "green";
+    }
+    function resumeUpload(){
+
+    if (fileInput.files.length === 0) {
+        fileError.innerHTML = "Please select a file to upload!";
+        fileError.style.color = "red";
+        return false;
+    }
+    let fileName = document.getElementById('resumeFile').value;
+    let fileExtension = fileName.split('.');
+    fileExtension = fileExtension[fileExtension.length - 1].toLowerCase();
+    if (fileExtension !== 'pdf' && fileExtension !== 'docx') {
+        fileError.innerHTML = "Please select PDF or DOC!";
+        fileError.style.color = "red";
+        return false;
+    }
+    return true;
+}
+
+  </script>
 </html>
