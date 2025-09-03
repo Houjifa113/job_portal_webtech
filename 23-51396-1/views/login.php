@@ -1,47 +1,18 @@
 <?php
 session_start();
 
-// --- Hardcoded users ---
-$users = [
-    "admin"    => ["password" => "admin123", "role" => "admin"],
-    "employer" => ["password" => "employer123", "role" => "employer"],
-    "jobseeker"=> ["password" => "job123", "role" => "jobseeker"]
-];
-
 $error = "";
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username']);
-    $password = trim($_POST['password']);
-
-    if ($username === "" || $password === "") {
-        $error = "⚠️ All fields are required!";
-    } elseif (isset($users[$username]) && $users[$username]['password'] === $password) {
-        // Store in session
-        $_SESSION['status'] = true;
-        $_SESSION['username'] = $username;
-        $_SESSION['role'] = $users[$username]['role'];
-
-        // Handle "Remember Me" functionality
-        if (isset($_POST['remember'])) {
-            // Store username in cookie for 30 days
-            setcookie("username", $username, time() + (30 * 24 * 60 * 60), "/");
-        } else {
-            // If "Remember Me" is not checked, remove the cookie
-            setcookie("username", "", time() - 3600, "/");
-        }
-
-        // Redirect based on role
-        if ($_SESSION['role'] === "admin") {
-            header("Location: admin.php");
-        } elseif ($_SESSION['role'] === "employer") {
-            header("Location: employer.php");
-        } else {
-            header("Location: jobseeker.php");
-        }
-        exit;
-    } else {
-        $error = "❌ Invalid username or password!";
+if (isset($_GET['error'])) {
+    switch ($_GET['error']) {
+        case 'null':
+            $error = "⚠️ All fields are required!";
+            break;
+        case 'invalid':
+            $error = "❌ Invalid username or password!";
+            break;
+        case 'unauthorized':
+            $error = "⚠️ Please login first!";
+            break;
     }
 }
 ?>
@@ -54,80 +25,129 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 40px;
+            margin: 0;
+            padding: 0;
             background-color: #f3f4f6;
+            position: fixed;
+            width: 100%;
+            height: 100%;
         }
 
         h2 {
             text-align: center;
+            position: fixed;
+            width: 100%;
+            top: 50px;
+            margin: 0;
+            font-size: 24px;
         }
 
         form {
+            position: fixed;
             width: 400px;
-            margin: auto;
-            padding: 20px;
+            height: 380px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
             background: #fff;
             border: 1px solid #ccc;
             border-radius: 6px;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         input[type="text"],
         input[type="password"] {
-            width: 100%;
+            width: 360px;
+            height: 35px;
             padding: 8px;
             margin-top: 4px;
             margin-bottom: 4px;
             border: 1px solid #aaa;
             border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
         }
 
         input[type="submit"] {
-            padding: 10px 15px;
-            margin-top: 10px;
+            width: 360px;
+            height: 40px;
+            margin-top: 15px;
             border: none;
             border-radius: 4px;
             background-color: #2563eb;
             color: white;
             cursor: pointer;
+            font-size: 16px;
+            position: relative;
         }
 
         input[type="submit"]:hover {
             background-color: #1d4ed8;
         }
 
+        input[type="checkbox"] {
+            margin-top: 10px;
+        }
+
+        label {
+            font-size: 14px;
+        }
+
         p {
             color: red;
             margin: 2px 0 6px 0;
             font-size: 13px;
+            width: 360px;
         }
 
         .links {
-            margin-top: 10px;
+            position: absolute;
+            bottom: 20px;
+            width: 360px;
             text-align: center;
         }
 
+        .links p {
+            color: #333;
+            font-size: 14px;
+        }
+
+        .links a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+
         .error {
-            color: red;
+            position: fixed;
+            width: 100%;
             text-align: center;
+            color: red;
+            top: 100px;
+            font-size: 14px;
         }
     </style>
 </head>
 
 <body>
 
-    <h2>Login Form</h2>
+    <h2>Sign-In</h2>
 
     <?php if ($error !== ""): ?>
         <p class="error"><?= $error ?></p>
     <?php endif; ?>
 
-    <form id="loginForm" method="post" onsubmit="return validateLogin()">
-        <label for="username">Username:</label>
+    <form id="loginForm" action="../controllers/loginCheck.php" method="post" onsubmit="return validateLogin()">
+        Username:
         <input type="text" id="username" name="username"
                value="<?= isset($_COOKIE['username']) ? htmlspecialchars($_COOKIE['username']) : '' ?>">
         <p id="usernameError"></p>
 
-        <label for="password">Password:</label>
+        Password:
         <input type="password" id="password" name="password">
         <p id="passwordError"></p>
 

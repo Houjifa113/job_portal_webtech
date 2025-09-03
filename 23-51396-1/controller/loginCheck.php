@@ -10,17 +10,16 @@ if ($username == "" || $password == "") {
     exit;
 }
 
-// simulate user database
 $users = [
-    "admin"    => "admin123",
-    "employer" => "employer123",
-    "jobseeker"=> "job123"
+    "admin"    => "admin",
+    "employer" => "employer",
+    "jobseeker"=> "job"
 ];
 
 if (array_key_exists($username, $users) && $users[$username] === $password) {
-    // success
     $_SESSION['status'] = true;
     $_SESSION['username'] = $username;
+    $_SESSION['role'] = $username; //  username is same as role 
 
     if ($remember) {
         setcookie('username', $username, time() + 3000, '/');
@@ -30,7 +29,6 @@ if (array_key_exists($username, $users) && $users[$username] === $password) {
         setcookie('password', '', time() - 10, '/');
     }
 
-    // redirect based on role
     if ($username == "admin") {
         header("location: ../views/admin.php");
     } elseif ($username == "employer") {

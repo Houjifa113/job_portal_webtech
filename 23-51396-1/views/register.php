@@ -85,11 +85,28 @@ session_start();
     <?php if (isset($_GET['error'])): ?>
         <p class="success">
             <?php
-            if ($_GET['error'] === "success") echo "✅ Registration successful! Please login.";
-            elseif ($_GET['error'] === "exists") echo "⚠️ Username already exists!";
-            elseif ($_GET['error'] === "password_mismatch") echo "⚠️ Passwords do not match!";
-            elseif ($_GET['error'] === "null") echo "⚠️ All fields are required!";
-            else echo "⚠️ Something went wrong!";
+            switch ($_GET['error']) {
+                case "success":
+                    echo "✅ Registration successful! Please login.";
+                    break;
+                case "user_exists":
+                    echo "⚠️ Username already exists!";
+                    break;
+                case "email_exists":
+                    echo "⚠️ Email already exists!";
+                    break;
+                case "password_mismatch":
+                    echo "⚠️ Passwords do not match!";
+                    break;
+                case "invalid_email":
+                    echo "⚠️ Invalid email format!";
+                    break;
+                case "null":
+                    echo "⚠️ All fields are required!";
+                    break;
+                default:
+                    echo "⚠️ Something went wrong!";
+            }
             ?>
         </p>
     <?php endif; ?>
@@ -113,7 +130,7 @@ session_start();
 
         <label for="role">Select Role:</label>
         <select id="role" name="role">
-            <option value="">--Select--</option>
+            <option value="">Select</option>
             <option value="admin">Admin</option>
             <option value="employer">Employer</option>
             <option value="jobseeker">Job Seeker</option>

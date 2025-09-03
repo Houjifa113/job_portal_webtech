@@ -1,8 +1,6 @@
 <?php
-session_start();
-
-// ✅ Server-side validation: only jobseeker can access
-if (!isset($_SESSION['status']) || $_SESSION['status'] !== true || $_SESSION['username'] !== "jobseeker") {
+require_once '../controllers/sessionCheck.php';
+if ($_SESSION['role'] !== 'jobseeker') {
     header("Location: login.php?error=unauthorized");
     exit;
 }
@@ -130,7 +128,7 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true || $_SESSION['us
 
 <div class="header">
     <h2>Job Seeker Dashboard</h2>
-    <form method="post" action="logout.php" style="margin:0;">
+    <form method="post" action="../controllers/logout.php">
         <button type="submit" class="logout-btn">Logout</button>
     </form>
 </div>
@@ -145,11 +143,10 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true || $_SESSION['us
 </div>
 
 <div class="main">
-    <!-- Overview -->
     <div id="overview">
         <h3>Overview</h3>
         <div class="card">
-            <h3 id="appliedCount">0</h3>
+            <h3 id="appliedCount">3</h3>
             <p>Total Jobs Applied</p>
         </div>
         <div class="card">
@@ -157,12 +154,11 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true || $_SESSION['us
             <p>Available Jobs</p>
         </div>
         <div class="card">
-            <h3 id="notificationCount">0</h3>
+            <h3 id="notificationCount">4</h3>
             <p>Notifications</p>
         </div>
     </div>
 
-    <!-- Browse Jobs -->
     <div id="browseJobs" style="display:none;">
         <h3>Browse Jobs</h3>
         <table>
@@ -178,21 +174,21 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true || $_SESSION['us
             <tbody id="jobTable">
                 <tr>
                     <td>Web Developer</td>
-                    <td>ABC Corp</td>
+                    <td>Algotech</td>
                     <td>Dhaka</td>
                     <td>30000</td>
                     <td><button class="btn-apply" onclick="applyJob(this)">Apply</button></td>
                 </tr>
                 <tr>
                     <td>Graphic Designer</td>
-                    <td>Design Studio</td>
-                    <td>Chittagong</td>
+                    <td>Hollyeood</td>
+                    <td>Kuril</td>
                     <td>25000</td>
                     <td><button class="btn-apply" onclick="applyJob(this)">Apply</button></td>
                 </tr>
                 <tr>
                     <td>Content Writer</td>
-                    <td>Media Hub</td>
+                    <td>Star Jolsa</td>
                     <td>Dhaka</td>
                     <td>20000</td>
                     <td><button class="btn-apply" onclick="applyJob(this)">Apply</button></td>
@@ -201,7 +197,6 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true || $_SESSION['us
         </table>
     </div>
 
-    <!-- Applied Jobs -->
     <div id="appliedJobs" style="display:none;">
         <h3>My Applications</h3>
         <table>
@@ -215,16 +210,50 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true || $_SESSION['us
                 </tr>
             </thead>
             <tbody id="appliedTable">
-                <tr><td colspan="5" style="text-align:center;">No applications yet.</td></tr>
+                <tr>
+                    <td>Senior Web Developer</td>
+                    <td>Tech Solutions Ltd</td>
+                    <td>Dhaka</td>
+                    <td>45000</td>
+                    <td>Under Review</td>
+                </tr>
+                <tr>
+                    <td>UI/UX Designer</td>
+                    <td>Creative Studio</td>
+                    <td>Chittagong</td>
+                    <td>35000</td>
+                    <td>Shortlisted</td>
+                </tr>
+                <tr>
+                    <td>Frontend Developer</td>
+                    <td>WebTech BD</td>
+                    <td>Dhaka</td>
+                    <td>40000</td>
+                    <td>Rejected</td>
+                </tr>
             </tbody>
         </table>
     </div>
 
-    <!-- Notifications -->
     <div id="notifications" style="display:none;">
         <h3>Notifications</h3>
         <div id="notificationList">
-            <p>No notifications yet.</p>
+            <div class="notification">
+                <strong>Application Update:</strong> You have select for UI/UX Designer position at AlgoTech.
+                <small style="display:block;color:#666;margin-top:5px;">2 hours ago</small>
+            </div>
+            <div class="notification">
+                <strong>Application Status:</strong> Your application for Frontend Developer at WebTech BD was not selected.
+                <small style="display:block;color:#666;margin-top:5px;">1 day ago</small>
+            </div>
+            <div class="notification">
+                <strong>New Job Match:</strong> A new Senior WEB Developer position matches your profile.
+                <small style="display:block;color:#666;margin-top:5px;">2 days ago</small>
+            </div>
+            <div class="notification">
+                <strong>Application Received:</strong> Your application for Senior Web Developer is received.
+                <small style="display:block;color:#666;margin-top:5px;">3 days ago</small>
+            </div>
         </div>
     </div>
 </div>
