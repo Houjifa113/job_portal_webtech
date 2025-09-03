@@ -1,3 +1,11 @@
+<?php
+require_once '../controllers/sessionCheck.php';
+if ($_SESSION['role'] !== 'jobseeker') {
+    header("Location: login.php?error=unauthorized");
+    exit;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +36,7 @@
         .logout-btn {
             padding: 6px 12px;
             border: none;
-            margin-right: 30px; 
+            margin-right: 30px; /* move left */
             border-radius: 4px;
             background-color: #ef4444;
             color: white;
@@ -39,7 +47,7 @@
             background-color: #1e293b;
             height: 100vh;
             position: fixed;
-            top: 60px; 
+            top: 60px; /* below header */
             left: 0;
             padding-top: 20px;
             color: white;
@@ -57,7 +65,7 @@
         }
         .main {
             margin-left: 220px;
-            padding: 80px 20px 20px; 
+            padding: 80px 20px 20px; /* extra padding for fixed header */
         }
         .card {
             display: inline-block;
@@ -120,7 +128,9 @@
 
 <div class="header">
     <h2>Job Seeker Dashboard</h2>
-    <button class="logout-btn" onclick="logout()">Logout</button>
+    <form method="post" action="../controllers/logout.php">
+        <button type="submit" class="logout-btn">Logout</button>
+    </form>
 </div>
 
 <div class="sidebar">
@@ -136,7 +146,7 @@
     <div id="overview">
         <h3>Overview</h3>
         <div class="card">
-            <h3 id="appliedCount">0</h3>
+            <h3 id="appliedCount">3</h3>
             <p>Total Jobs Applied</p>
         </div>
         <div class="card">
@@ -144,7 +154,7 @@
             <p>Available Jobs</p>
         </div>
         <div class="card">
-            <h3 id="notificationCount">0</h3>
+            <h3 id="notificationCount">4</h3>
             <p>Notifications</p>
         </div>
     </div>
@@ -164,21 +174,21 @@
             <tbody id="jobTable">
                 <tr>
                     <td>Web Developer</td>
-                    <td>ABC Corp</td>
+                    <td>Algotech</td>
                     <td>Dhaka</td>
                     <td>30000</td>
                     <td><button class="btn-apply" onclick="applyJob(this)">Apply</button></td>
                 </tr>
                 <tr>
                     <td>Graphic Designer</td>
-                    <td>Design Studio</td>
-                    <td>Chittagong</td>
+                    <td>Hollyeood</td>
+                    <td>Kuril</td>
                     <td>25000</td>
                     <td><button class="btn-apply" onclick="applyJob(this)">Apply</button></td>
                 </tr>
                 <tr>
                     <td>Content Writer</td>
-                    <td>Media Hub</td>
+                    <td>Star Jolsa</td>
                     <td>Dhaka</td>
                     <td>20000</td>
                     <td><button class="btn-apply" onclick="applyJob(this)">Apply</button></td>
@@ -200,7 +210,27 @@
                 </tr>
             </thead>
             <tbody id="appliedTable">
-                <tr><td colspan="5" style="text-align:center;">No applications yet.</td></tr>
+                <tr>
+                    <td>Senior Web Developer</td>
+                    <td>Tech Solutions Ltd</td>
+                    <td>Dhaka</td>
+                    <td>45000</td>
+                    <td>Under Review</td>
+                </tr>
+                <tr>
+                    <td>UI/UX Designer</td>
+                    <td>Creative Studio</td>
+                    <td>Chittagong</td>
+                    <td>35000</td>
+                    <td>Shortlisted</td>
+                </tr>
+                <tr>
+                    <td>Frontend Developer</td>
+                    <td>WebTech BD</td>
+                    <td>Dhaka</td>
+                    <td>40000</td>
+                    <td>Rejected</td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -208,7 +238,22 @@
     <div id="notifications" style="display:none;">
         <h3>Notifications</h3>
         <div id="notificationList">
-            <p>No notifications yet.</p>
+            <div class="notification">
+                <strong>Application Update:</strong> You have select for UI/UX Designer position at AlgoTech.
+                <small style="display:block;color:#666;margin-top:5px;">2 hours ago</small>
+            </div>
+            <div class="notification">
+                <strong>Application Status:</strong> Your application for Frontend Developer at WebTech BD was not selected.
+                <small style="display:block;color:#666;margin-top:5px;">1 day ago</small>
+            </div>
+            <div class="notification">
+                <strong>New Job Match:</strong> A new Senior WEB Developer position matches your profile.
+                <small style="display:block;color:#666;margin-top:5px;">2 days ago</small>
+            </div>
+            <div class="notification">
+                <strong>Application Received:</strong> Your application for Senior Web Developer is received.
+                <small style="display:block;color:#666;margin-top:5px;">3 days ago</small>
+            </div>
         </div>
     </div>
 </div>
@@ -220,11 +265,6 @@ function showSection(section) {
     document.getElementById('appliedJobs').style.display = 'none';
     document.getElementById('notifications').style.display = 'none';
     document.getElementById(section).style.display = 'block';
-}
-
-function logout() {
-    alert('You have been logged out.');
-    window.location.href = 'login.html';
 }
 
 function applyJob(btn) {
