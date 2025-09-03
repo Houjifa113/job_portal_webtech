@@ -20,7 +20,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Resume Manager</title>
+    <title>Profile Strength Check</title>
     <link rel="stylesheet" href="../asset/style.css">
     <style>
     body {

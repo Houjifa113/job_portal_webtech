@@ -1,5 +1,5 @@
 <?php
-    session_start();
+    /*session_start();
     if(isset($_SESSION['status'])){
         if($_SESSION['status'] != 'valid'){
             header('location: login.php?error=badrequest');
@@ -14,13 +14,13 @@
         }
     }else{
         header('location: login.php?error=badrequest');
-    }
+    }*/
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Saved Searches</title>
+    <title>Search History</title>
 </head>
 <link rel="stylesheet" href="../asset/style.css">
 <body>

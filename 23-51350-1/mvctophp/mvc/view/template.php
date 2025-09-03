@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Resume manager</title>
+    <title>Create CV</title>
     <link rel="stylesheet" href="../asset/style.css">
     <style>
         .container {
@@ -44,5 +44,5 @@
         </tr>
     </table>
 </body>
-<script src="../asset/script.js"></script>
+<script ></script>
 </html>
