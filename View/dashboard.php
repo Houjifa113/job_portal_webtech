@@ -11,7 +11,7 @@ if(!isset($_SESSION['status']) || !isset($_COOKIE['status'])){
 <html>
 <head>
     <title>Dashboard</title>
-     <link rel="stylesheet" href="../Asset/style.css">
+     <link rel="stylesheet" href="../Asset/Khorshida.css">
 </head>
 <body>
     <div class="container">

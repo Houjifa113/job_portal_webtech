@@ -15,7 +15,7 @@ if(isset($_SESSION['status']) && $_SESSION['status'] == true) {
 <html>
   <head>
     <title>User Authentication</title>
-    <link rel="stylesheet" href="../Asset/style.css">
+    <link rel="stylesheet" href="../Asset/Khorshida.css">
   </head>
   <body> 
     <h1>User Authentication</h1>
