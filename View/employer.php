@@ -1,8 +1,8 @@
 <?php
-require_once '../controllers/sessionCheck.php';
-if ($_SESSION['role'] !== 'employer') {
-    header("Location: login.php?error=unauthorized");
-    exit;
+require_once '../Controller/sessionCheck.php';  // Fixed path
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Employer') {
+    header("Location: ../View/UserAuthetication.php");
+    exit();
 }
 
 if (!isset($_SESSION['jobs'])) {

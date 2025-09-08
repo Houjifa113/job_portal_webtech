@@ -1,21 +1,119 @@
 <?php
-require_once '../controllers/sessionCheck.php';
-if ($_SESSION['role'] !== 'admin') {
-    header("Location: login.php?error=unauthorized");
+require_once '../Model/config.php';
+
+// Check if user is logged in and is an admin
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Admin') {
+    header("Location: ../View/UserAuthetication.php");
+    exit();
+}
+
+// Get dashboard statistics
+function getDashboardStats($pdo) {
+    $stats = [];
+    
+    // Total Users
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM users");
+    $stats['total_users'] = $stmt->fetch()['total'];
+    
+    // Active Employers
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM users WHERE role = 'Employer'");
+    $stats['active_employers'] = $stmt->fetch()['total'];
+    
+    // Job Listings
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM jobs");
+    $stats['job_listings'] = $stmt->fetch()['total'];
+    
+    // Applications
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM job_applications");
+    $stats['applications'] = $stmt->fetch()['total'];
+    
+    return $stats;
+}
+
+// Get all users for manage users section
+function getAllUsers($pdo) {
+    $stmt = $pdo->query("SELECT * FROM users ORDER BY created_at DESC");
+    return $stmt->fetchAll();
+}
+
+// Get recent activity logs
+function getRecentLogs($pdo, $limit = 10) {
+    $stmt = $pdo->prepare("SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT ?");
+    $stmt->execute([$limit]);
+    return $stmt->fetchAll();
+}
+
+// Handle user actions (CRUD operations)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action'])) {
+        switch ($_POST['action']) {
+            case 'add_user':
+                $name = filter_var($_POST['name'], FILTER_SANITIZE_STRING);
+                $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
+                $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+                $role = filter_var($_POST['role'], FILTER_SANITIZE_STRING);
+                
+                try {
+                    $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)");
+                    $stmt->execute([$name, $email, $password, $role]);
+                    logActivity($pdo, $_SESSION['user_id'], $_SESSION['username'], "Added new user: $name");
+                    echo json_encode(['success' => true]);
+                    exit;
+                } catch (PDOException $e) {
+                    echo json_encode(['error' => 'Email already exists']);
+                    exit;
+                }
+                break;
+                
+            case 'delete_user':
+                $userId = filter_var($_POST['user_id'], FILTER_SANITIZE_NUMBER_INT);
+                try {
+                    $stmt = $pdo->prepare("DELETE FROM users WHERE id = ? AND role != 'Admin'");
+                    $stmt->execute([$userId]);
+                    logActivity($pdo, $_SESSION['user_id'], $_SESSION['username'], "Deleted user ID: $userId");
+                    echo json_encode(['success' => true]);
+                    exit;
+                } catch (PDOException $e) {
+                    echo json_encode(['error' => 'Cannot delete user']);
+                    exit;
+                }
+                break;
+                
+            case 'update_user':
+                $userId = filter_var($_POST['user_id'], FILTER_SANITIZE_NUMBER_INT);
+                $name = filter_var($_POST['name'], FILTER_SANITIZE_STRING);
+                $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
+                $role = filter_var($_POST['role'], FILTER_SANITIZE_STRING);
+                
+                try {
+                    $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?");
+                    $stmt->execute([$name, $email, $role, $userId]);
+                    logActivity($pdo, $_SESSION['user_id'], $_SESSION['username'], "Updated user ID: $userId");
+                    echo json_encode(['success' => true]);
+                    exit;
+                } catch (PDOException $e) {
+                    echo json_encode(['error' => 'Cannot update user']);
+                    exit;
+                }
+                break;
+        }
+    }
+}
+
+// Get initial statistics
+$stats = getDashboardStats($pdo);
+$users = getAllUsers($pdo);
+$recent_logs = getRecentLogs($pdo);
+
+// Handle logout
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header("Location: ../View/UserAuthetication.php");
     exit;
 }
 
 $username = $_SESSION['username'];
 $role = $_SESSION['role'];
-
-
-if (isset($_GET['logout'])) {
-    session_destroy();
-    setcookie("username", "", time() - 3600, "/");
-    setcookie("password", "", time() - 3600, "/");
-    header("Location: login.php");
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -751,7 +849,7 @@ if (isset($_GET['logout'])) {
         <div class="simple-grid">
             <div class="simple-card">
                 <h4>Export Data</h4>
-                <form id="exportForm" onsubmit="return handleExport(event)">
+                <form id="exportForm">
                     <div class="input-group">
                         Select Data to Export:
                         <select id="exportType" name="exportType">
@@ -763,17 +861,7 @@ if (isset($_GET['logout'])) {
                         </select>
                         <p id="exportTypeError" class="error"></p>
                     </div>
-                    <div class="input-group">
-                        Export Format:
-                        <select id="exportFormat" name="exportFormat">
-                            <option value="">--Select Format--</option>
-                            <option value="csv">CSV</option>
-                            <option value="excel">Excel</option>
-                            <option value="pdf">PDF</option>
-                        </select>
-                        <p id="exportFormatError" class="error"></p>
-                    </div>
-                    <button type="submit" class="submit-btn">Generate Export</button>
+                    <button type="button" onclick="exportData()" class="submit-btn">Export as CSV</button>
                 </form>
             </div>
 
@@ -956,10 +1044,80 @@ function restoreUser(username, button) {
     }
 }
 
-function handleExport(event) {
+function handleAddUser(event) {
     event.preventDefault();
+    if (!validateAddUser()) return false;
+
+    const formData = new FormData();
+    formData.append('action', 'add_user');
+    formData.append('name', document.getElementById('newUsername').value.trim());
+    formData.append('email', document.getElementById('newEmail').value.trim());
+    formData.append('password', document.getElementById('newPassword').value);
+    formData.append('role', document.getElementById('newRole').value);
+
+    fetch('admin_actions.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            document.getElementById('messageArea').innerHTML = 
+                `<p class="error">${data.error}</p>`;
+        }
+    });
+
+    return false;
+}
+
+function handleEditUser(userId) {
+    const row = document.querySelector(`tr[data-id="${userId}"]`);
+    const name = row.querySelector('.user-name').textContent;
+    const email = row.querySelector('.user-email').textContent;
+    const role = row.querySelector('.user-role').textContent;
+
+    // Populate edit form
+    document.getElementById('editUserId').value = userId;
+    document.getElementById('editUsername').value = name;
+    document.getElementById('editEmail').value = email;
+    document.getElementById('editRole').value = role;
+    
+    // Show edit form
+    document.getElementById('editUserForm').style.display = 'block';
+}
+
+function handleDeleteUser(userId) {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+
+    const formData = new FormData();
+    formData.append('action', 'delete_user');
+    formData.append('user_id', userId);
+
+    fetch('admin_actions.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error);
+        }
+    });
+}
+
+function exportData() {
     const type = document.getElementById('exportType').value;
-    const format = document.getElementById('exportFormat').value;
+    if (!type) {
+        document.getElementById('exportTypeError').textContent = "Please select data type";
+        return;
+    }
+
+    window.location.href = `../Controller/export.php?type=${type}`;
+}
     let valid = true;
 
     document.getElementById('exportTypeError').textContent = "";
