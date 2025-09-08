@@ -1,9 +1,10 @@
 <?php
-session_start();
+require_once '../Model/config.php';
 
-
-if(!isset($_SESSION['status']) || !isset($_COOKIE['status'])){
-    header('location: UserAuthetication.php?error=badrequest');
+// Check if user is logged in and is a jobseeker
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Job Seeker') {
+    header("Location: ../View/UserAuthetication.php");
+    exit();
 }
 ?>
 
@@ -54,7 +55,7 @@ if(!isset($_SESSION['status']) || !isset($_COOKIE['status'])){
     </section>
 
    
-    <a href="../Controllers/logout.php" style="display: block; margin-top: 20px; text-align:center;">
+    <a href="../Controller/logout.php" style="display: block; margin-top: 20px; text-align:center;">
         <button class="btn btn-danger">Logout</button>
     </a>
 
