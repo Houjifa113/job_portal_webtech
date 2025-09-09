@@ -23,7 +23,9 @@ if(!isset($_SESSION['status']) || !isset($_COOKIE['status'])){
         <a href="InterviewScheduling.php
         "><button class="btn">Schedule an Interview</button></a>
         <a href="ApplicationTracking.php"><button class="btn">Track My Applications</button></a>
-        <a href="jobs.html"><button class="btn">Search for jobs</button></a>
+        <a href="job.php"><button class="btn">Search for jobs</button></a>
+         <a href="#"><button class="btn">Resume Upload</button></a>
+          <a href="#"><button class="btn">View Companies</button></a>
     </section>
 
     <section>
