@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['name'];
             $_SESSION['role'] = $user['role'];
+            $_SESSION['id'] = $user['id'];
             
             // Log the activity
             logActivity($pdo, $user['id'], $user['name'], 'User logged in');
