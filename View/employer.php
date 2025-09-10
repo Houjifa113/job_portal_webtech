@@ -1,48 +1,55 @@
 <?php
-require_once '../Controller/sessionCheck.php';  // Fixed path
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Employer') {
-    header("Location: ../View/UserAuthetication.php");
-    exit();
+session_start();
+require_once '../Model/database.php';
+
+// Check if user is logged in and is employer
+if(!isset($_SESSION['status']) || $_SESSION['user_role'] != 'Employer'){
+    header('location: auth.php?error=badrequest');
 }
 
-if (!isset($_SESSION['jobs'])) {
-    $_SESSION['jobs'] = [
-        ["title" => "Web Developer", "location" => "Dhaka", "salary" => "30000"]
-    ];
-}
+$employer_id = $_SESSION['user_id'];
 
-$error = "";
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['postJob'])) {
-    $title = trim($_POST['jobTitle']);
-    $location = trim($_POST['jobLocation']);
-    $salary = trim($_POST['jobSalary']);
-
-    if ($title === "" || $location === "" || $salary === "") {
-        $error = "All fields are required.";
-    } else {
-        $_SESSION['jobs'][] = [
-            "title" => $title,
-            "location" => $location,
-            "salary" => $salary
-        ];
-    }
-}
-
-if (isset($_GET['delete'])) {
-    $index = (int) $_GET['delete'];
-    if (isset($_SESSION['jobs'][$index])) {
-        unset($_SESSION['jobs'][$index]);
-        $_SESSION['jobs'] = array_values($_SESSION['jobs']); // reindex
-    }
-    header("Location: employer.php");
-    exit();
-}
-
-if (isset($_GET['logout'])) {
+// Handle logout
+if(isset($_REQUEST['logout'])){
     session_destroy();
-    header("Location: login.php");
-    exit();
+    header('location: auth.php');
 }
+
+// Handle job posting
+if(isset($_REQUEST['postJob'])){
+    $title = trim($_REQUEST['jobTitle']);
+    $location = trim($_REQUEST['jobLocation']);
+    $salary = trim($_REQUEST['jobSalary']);
+    $description = "Job description for " . $title; // Default description
+    
+    if($title != "" && $location != "" && $salary != ""){
+        $insert_sql = "INSERT INTO jobs (title, description, location, salary, employer_id) VALUES ('$title', '$description', '$location', 'BDT $salary', '$employer_id')";
+        if(mysqli_query($conn, $insert_sql)){
+            // Log activity
+            $log_sql = "INSERT INTO activity_logs (user_id, user_name, action) VALUES ('$employer_id', '".$_SESSION['user_name']."', 'Posted new job: $title')";
+            mysqli_query($conn, $log_sql);
+            
+            header('location: employer.php?success=posted');
+        }else{
+            header('location: employer.php?error=failed');
+        }
+    }else{
+        header('location: employer.php?error=null');
+    }
+}
+
+// Get employer's statistics
+$active_jobs_sql = "SELECT COUNT(*) as count FROM jobs WHERE employer_id = '$employer_id' AND status = 'Active'";
+$active_jobs_result = mysqli_query($conn, $active_jobs_sql);
+$active_jobs = mysqli_fetch_assoc($active_jobs_result)['count'];
+
+$applications_sql = "SELECT COUNT(*) as count FROM job_applications ja JOIN jobs j ON ja.job_id = j.id WHERE j.employer_id = '$employer_id'";
+$applications_result = mysqli_query($conn, $applications_sql);
+$applications = mysqli_fetch_assoc($applications_result)['count'];
+
+// Get employer's jobs
+$jobs_sql = "SELECT id, title, location, salary FROM jobs WHERE employer_id = '$employer_id' ORDER BY created_at DESC";
+$jobs_result = mysqli_query($conn, $jobs_sql);
 ?>
 
 <!DOCTYPE html>
@@ -50,227 +57,12 @@ if (isset($_GET['logout'])) {
 <head>
     <meta charset="UTF-8">
     <title>Employer Dashboard</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; background-color: #f3f4f6; }
-        .header { background-color: #2563eb; color: white; padding: 15px 20px;
-                  display: flex; justify-content: space-between; align-items: center;
-                  position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; }
-        .header h2 { margin: 0; }
-        .logout-btn { padding: 6px 12px; border: none; margin-right: 30px; border-radius: 4px;
-                      background-color: #ef4444; color: white; cursor: pointer; }
-        .sidebar { width: 220px; background-color: #1e293b; height: 100vh;
-                   position: fixed; top: 60px; left: 0; padding-top: 20px; color: white; }
-        .sidebar ul { list-style: none; padding-left: 0; }
-        .sidebar ul li { padding: 12px 20px; cursor: pointer; }
-        .sidebar ul li:hover { background-color: #334155; }
-        .main { margin-left: 220px; padding: 80px 20px 20px; }
-        table { width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 0 6px #ccc; margin-top: 15px; }
-        table th, table td { padding: 8px 12px; border: 1px solid #ddd; }
-        table th { background-color: #e2e8f0; }
-        .btn { padding: 4px 8px; border: none; border-radius: 4px; background-color: #2563eb; color: white; cursor: pointer; }
-        .btn:hover { background-color: #1d4ed8; }
-        .card { display: inline-block; width: 200px; margin: 10px; padding: 15px; background-color: white;
-                border-radius: 6px; box-shadow: 0 0 6px #ccc; text-align: center; transition: transform 0.2s; }
-        .card:hover { transform: scale(1.05); }
-        .card h3 { margin: 10px 0; font-size: 22px; color: #2563eb; }
-        .card p { margin: 0; color: #4b5563; }
-        .error { color: red; margin: 5px 0; }
-
-        /* Post Job Styles */
-        .post-job-container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .job-form {
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #374151;
-            font-weight: 500;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 10px;
-            background-color: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .submit-btn:hover {
-            background-color: #1d4ed8;
-        }
-
-        /* Recent Posts Styles */
-        .recent-posts {
-            margin-top: 40px;
-        }
-
-        .recent-posts h3 {
-            margin-bottom: 20px;
-            color: #374151;
-        }
-
-        .job-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .job-card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-
-        .job-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .job-card h4 {
-            margin: 0 0 15px 0;
-            color: #1e40af;
-            font-size: 18px;
-        }
-
-        .job-card p {
-            margin: 8px 0;
-            color: #4b5563;
-            font-size: 14px;
-        }
-
-        .job-location, .job-salary, .job-date {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .job-tags {
-            margin-top: 15px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .job-tags span {
-            background: #e5e7eb;
-            color: #374151;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-        }
-
-        /* Notification Styles */
-        .notification-list {
-            max-width: 800px;
-        }
-
-        .notification-item {
-            background: white;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: relative;
-            border-left: 4px solid #cbd5e1;
-        }
-
-        .notification-item.unread {
-            border-left-color: #2563eb;
-            background-color: #f8fafc;
-        }
-
-        .notification-item h4 {
-            margin: 0 0 10px 0;
-            color: #1e293b;
-            font-size: 16px;
-        }
-
-        .notification-item p {
-            margin: 0 0 15px 0;
-            color: #64748b;
-        }
-
-        .notification-time {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            color: #94a3b8;
-            font-size: 12px;
-        }
-
-        .notification-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            margin-left: 10px;
-            color: white;
-        }
-
-        .badge-success { background-color: #22c55e; }
-        .badge-warning { background-color: #eab308; }
-        .badge-info { background-color: #3b82f6; }
-
-        .action-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            background-color: #2563eb;
-            color: white;
-            cursor: pointer;
-            margin-right: 10px;
-            font-size: 12px;
-        }
-
-        .action-btn:hover {
-            background-color: #1d4ed8;
-        }
-
-        .action-btn.view {
-            background-color: #22c55e;
-        }
-
-        .action-btn.view:hover {
-            background-color: #16a34a;
-        }
-    </style>
+    <link rel="stylesheet" href="../Asset/sabid.css">
 </head>
 <body>
 
 <div class="header">
-    <h2>Employer Dashboard</h2>
+    <h2>Employer Dashboard - Welcome, <?=$_SESSION['user_name']?></h2>
     <a href="?logout=true"><button class="logout-btn">Logout</button></a>
 </div>
 
@@ -287,11 +79,11 @@ if (isset($_GET['logout'])) {
     <div id="overview">
         <h3>Overview</h3>
         <div class="card">
-            <h3><?php echo count($_SESSION['jobs']); ?></h3>
+            <h3><?=$active_jobs?></h3>
             <p>Active Jobs</p>
         </div>
         <div class="card">
-            <h3>12</h3>
+            <h3><?=$applications?></h3>
             <p>Applications</p>
         </div>
         <div class="card">
@@ -306,7 +98,6 @@ if (isset($_GET['logout'])) {
 
     <div id="postJob" style="display:none;">
         <h3>Post a New Job</h3>
-        <?php if ($error) echo "<p class='error'>$error</p>"; ?>
         <div class="post-job-container">
             <form id="postJobForm" method="POST" onsubmit="return validateJobForm()" class="job-form">
                 <div class="form-group">
@@ -385,14 +176,17 @@ if (isset($_GET['logout'])) {
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($_SESSION['jobs'] as $index => $job): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($job['title']); ?></td>
-                        <td><?php echo htmlspecialchars($job['location']); ?></td>
-                        <td><?php echo htmlspecialchars($job['salary']); ?></td>
-                        <td><a href="?delete=<?php echo $index; ?>"><button class="btn">Delete</button></a></td>
+                <?php while($job = mysqli_fetch_assoc($jobs_result)): ?>
+                    <tr data-id="<?=$job['id']?>">
+                        <td><?=$job['title']?></td>
+                        <td><?=$job['location']?></td>
+                        <td><?=$job['salary']?></td>
+                        <td>
+                            <button class="btn" onclick="editJob(this)">Edit</button>
+                            <button class="btn" onclick="deleteJob(this)">Delete</button>
+                        </td>
                     </tr>
-                <?php endforeach; ?>
+                <?php endwhile; ?>
             </tbody>
         </table>
     </div>
@@ -457,7 +251,52 @@ function validateJobForm() {
         valid = false;
     }
 
-    return valid; 
+    if (valid) {
+        // Allow form submission to PHP
+        return true;
+    }
+
+    return false; 
+}
+
+function deleteJob(button) {
+    const row = button.closest('tr');
+    const jobTitle = row.cells[0].textContent;
+    
+    if (confirm(`Are you sure you want to delete the job "${jobTitle}"?`)) {
+        row.remove();
+        
+      
+        const activeJobsCard = document.querySelector('#overview .card:first-child h3');
+        const currentCount = parseInt(activeJobsCard.textContent);
+        activeJobsCard.textContent = Math.max(0, currentCount - 1);
+        
+        alert('Job deleted successfully!');
+    }
+}
+
+function editJob(button) {
+    const row = button.closest('tr');
+    const jobTitle = row.cells[0].textContent;
+    const jobLocation = row.cells[1].textContent;
+    const jobSalary = row.cells[2].textContent.replace('BDT ', '');
+    
+    // form with  data
+    document.getElementById('jobTitle').value = jobTitle;
+    document.getElementById('jobLocation').value = jobLocation;
+    document.getElementById('jobSalary').value = jobSalary;
+    
+    // Switch to the Post Job section
+    showSection('postJob');
+    
+
+    const submitBtn = document.querySelector('#postJobForm .submit-btn');
+    submitBtn.textContent = 'Update Job';
+    submitBtn.setAttribute('data-editing', 'true');
+    submitBtn.setAttribute('data-row-index', Array.from(row.parentNode.children).indexOf(row));
+    
+    // Scroll 
+    document.querySelector('.post-job-container').scrollIntoView({ behavior: 'smooth' });
 }
 </script>
 
