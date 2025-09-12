@@ -8,6 +8,7 @@ if (!isset($_COOKIE['status']) || $_COOKIE['status'] != 'valid') {
     header('location: login.php?error=badrequest');
     exit;
 }
+$id = $_SESSION['id'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -73,60 +74,64 @@ if (!isset($_COOKIE['status']) || $_COOKIE['status'] != 'valid') {
         </tr>
     </table>
     <script>
-        let searchHistory = [
-            { JobTitle: "Software Engineer", Status: "Remote" },
-            { JobTitle: "Data Scientist", Status: "Hybrid" },
-            { JobTitle: "Product Manager", Status: "On-site" },
-        ];
-
-        let table2 = document.getElementById("queryManagerTable");
-        if (table2 && typeof searchHistory !== "undefined") {
-            for (let i = 0; i < searchHistory.length; i++) {
-                let row = document.createElement("tr");
-
-                let jobTitleTd = document.createElement("td");
-                jobTitleTd.style.padding = "1%";
-                jobTitleTd.style.color = "azure";
-                jobTitleTd.style.textAlign = "center";
-                jobTitleTd.colSpan = 2;
-                jobTitleTd.textContent = searchHistory[i]["JobTitle"];
-                row.appendChild(jobTitleTd);
-
-                let statusTd = document.createElement("td");
-                statusTd.textContent = searchHistory[i]["Status"];
-                row.appendChild(statusTd);
-
-
-                let goToTd = document.createElement("td");
-                let btn = document.createElement("button");
-                btn.textContent = "Click here";
-                btn.className = "search-button";
-
-                let url = "/searchBar.html?";
-                url += "JobTitle=" + encodeURIComponent(searchHistory[i]["JobTitle"]);
-                url += "&Status=" + encodeURIComponent(searchHistory[i]["Status"]);
-
-                let link = document.createElement("a");
-                link.href = url;
-                link.appendChild(btn);
-
-                goToTd.appendChild(link);
-                row.appendChild(goToTd);
-
-                let deleteTd = document.createElement("td");
-                let deleteBtn = document.createElement("button");
-                deleteBtn.textContent = "Delete";
-                deleteBtn.className = "search-button";
-                deleteBtn.onclick = function () {
-                    table2.removeChild(row);
-                    searchHistory.splice(i, 1);
-                };
-                deleteTd.appendChild(deleteBtn);
-                row.appendChild(deleteTd);
-
-                table2.appendChild(row);
+        let XHTTP = new XMLHttpRequest();
+        XHTTP.open("POST", "../controller/getSavedSearches.php", true);
+        XHTTP.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        XHTTP.send();
+        XHTTP.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                let searchHistory = JSON.parse(this.responseText);
+                let table2 = document.getElementById("queryManagerTable");
+                if (table2) {
+                    searchHistory.forEach((item, i) => {
+                        let row = document.createElement("tr");
+                        let jobTitleTd = document.createElement("td");
+                        jobTitleTd.style.padding = "1%";
+                        jobTitleTd.style.color = "azure";
+                        jobTitleTd.style.textAlign = "center";
+                        jobTitleTd.colSpan = 2;
+                        jobTitleTd.textContent = item.job_title;
+                        row.appendChild(jobTitleTd);
+                        let statusTd = document.createElement("td");
+                        statusTd.textContent = item.status;
+                        row.appendChild(statusTd);
+                        let goToTd = document.createElement("td");
+                        let btn = document.createElement("button");
+                        btn.textContent = "Click here";
+                        btn.className = "search-button";
+                        let url = `/searchBar.html?JobTitle=${encodeURIComponent(item.job_title)}&Status=${encodeURIComponent(item.status)}`;
+                        let link = document.createElement("a");
+                        link.href = url;
+                        link.appendChild(btn);
+                        goToTd.appendChild(link);
+                        row.appendChild(goToTd);
+                        let deleteTd = document.createElement("td");
+                        let deleteBtn = document.createElement("button");
+                        deleteBtn.textContent = "Delete";
+                        deleteBtn.className = "search-button";
+                        deleteBtn.onclick = function () {
+                            let deleteXHTTP = new XMLHttpRequest();
+                            deleteXHTTP.open("POST", "../controller/deleteSearchHistory.php", true);
+                            deleteXHTTP.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                            deleteXHTTP.onreadystatechange = function() {
+                                if (this.readyState === 4 && this.status === 200) {
+                                    if (this.responseText === "success") {
+                                        table2.removeChild(row);
+                                        searchHistory.splice(i, 1);
+                                    } else {
+                                        alert("Failed to delete entry.");
+                                    }
+                                }
+                            };
+                            deleteXHTTP.send("id=" + encodeURIComponent(item.id));
+                        };
+                        deleteTd.appendChild(deleteBtn);
+                        row.appendChild(deleteTd);
+                        table2.appendChild(row);
+                    });
+                }
             }
-        }
+        };
     </script>
 </body>
 </html>
