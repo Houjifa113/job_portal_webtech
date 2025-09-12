@@ -15,6 +15,7 @@
     }else{
         header('location: login.php?error=badrequest');
     }
+    $id=$_SESSION['id'];
 ?>
 
 <!DOCTYPE html>
@@ -126,31 +127,44 @@
     <a href="./home.php"><input type="button" value="Home" id="home" class="resume-button" style="position: absolute;left: 2%;top: 2%;width: 8%;"></a>
     <div class="strength-box" id="strengthBox"></div>
     <script>
-    let fields = [
-        "Full Name", "Email", "Phone", "LinkedIn", "Bio",
-        "Education", "Skills", "Experience", "Resume"
-    ];
+    window.onload = function() {
+        let id = <?php echo $id; ?>;
+        let xhttp = new XMLHttpRequest();
+        xhttp.open('POST', '../controller/getStrength.php', true);
+        xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        xhttp.send("id=" + id);
 
-    const completed = [];
-    const missing = [];
-    fields.forEach(label => {
-        if (Math.random() > 0.5) completed.push(label);
-        else missing.push(label);
-    });
+        xhttp.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+                try {
+                    let response = JSON.parse(this.responseText);
+                    let strengthBox = document.getElementById('strengthBox');
 
-    let percent = Math.round((completed.length / fields.length) * 100);
-    const box = document.getElementById('strengthBox');
-    box.innerHTML = `<h2>Profile strength: ${percent}%</h2>`;
-    if (missing.length) {
-        box.innerHTML += "<div class='missing-list'><b>Missing:</b><ul>";
-        missing.forEach(m => {
-            box.innerHTML += `<li>${m}</li>`;
-        });
-        box.innerHTML += "</ul></div>";
-    } else {
-        box.innerHTML += "<div class='complete-msg'>All sections complete!</div>";
+                    let strength = response.percentage ?? 0;
+                    let missing = response.missing ?? [];
+
+                    let html = `<h2>Profile Strength: ${strength}%</h2>`;
+
+                    if (strength < 100) {
+                        html += `<div class="missing-list"><p>Missing Sections:</p><ul>`;
+                        missing.forEach(item => {
+                            html += `<li>${item}</li>`;
+                        });
+                        html += `</ul></div>`;
+                        html += `<button class="profile-button" onclick="window.location.href='profileManagement.php'">Complete Profile</button>`;
+                    } else {
+                        html += `<div class="complete-msg"><p>Your profile is complete!</p></div>`;
+                    }
+
+                    strengthBox.innerHTML = html;
+                } catch (e) {
+                    console.error("Invalid JSON response", this.responseText);
+                }
+            }
+        };
     }
 </script>
+
 
 </body>
 </html>
