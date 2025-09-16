@@ -1,5 +1,4 @@
 <?php
-<<<<<<< HEAD:View/dashboard.php
 session_start();
 if(!isset($_SESSION['user_id'])) {
     $_SESSION['user_id'] = 1; 
@@ -11,14 +10,6 @@ require_once('../Model/interviewModel.php');
 
 if(!isset($_SESSION['status']) || !isset($_COOKIE['status'])){
     header('location: UserAuthetication.php?error=badrequest');
-=======
-require_once '../Model/config.php';
-
-// Check if user is logged in and is a jobseeker
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Job Seeker') {
-    header("Location: ../View/UserAuthetication.php");
-    exit();
->>>>>>> main:View/jobSeeker.php
 }
 
 $user_id = $_SESSION['user_id'];
@@ -80,13 +71,7 @@ $recentActivities = [
         </ul>
         </div>
     </section>
-<<<<<<< HEAD:View/dashboard.php
  <a href="../Controllers/logout.php" style="display: block; margin-top: 20px; text-align:center;">
-=======
-
-   
-    <a href="../Controller/logout.php" style="display: block; margin-top: 20px; text-align:center;">
->>>>>>> main:View/jobSeeker.php
         <button class="btn btn-danger">Logout</button>
     </a>
 

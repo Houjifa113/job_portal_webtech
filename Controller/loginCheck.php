@@ -9,6 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
     $password = $_POST['password'];
 
+<<<<<<< HEAD
+if($email ==="" || $password === ""){
+    header('location: ../Views/UserAuthetication.php?error=null');
+=======
     if (empty($email) || empty($password)) {
         header('Location: ../View/UserAuthetication.php?error=empty_fields');
         exit();
@@ -56,5 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 } else {
     header('Location: ../View/UserAuthetication.php');
+>>>>>>> main
     exit();
 }
