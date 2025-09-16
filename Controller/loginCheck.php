@@ -6,7 +6,7 @@ $password = $_REQUEST['password'];
 
 $testUser = array('test', 'test@aiub.edu', 'Maimunaa');
 
-if($email == "" || $password == ""){
+if($email ==="" || $password === ""){
     header('location: ../Views/UserAuthetication.php?error=null');
     exit();
 }

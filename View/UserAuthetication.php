@@ -20,8 +20,8 @@ if(isset($_SESSION['status']) && $_SESSION['status'] == true) {
   <body> 
     <h1>User Authentication</h1>
 
-    <!--Toggle Buttons-->
-    <button class="btn" id="showLogin" onclick="showlogin()">Login</button>
+   
+   
     <button class="btn" id="showSignup" onclick="showsignup()">Sign Up</button>
 
     <!--Login Form-->
