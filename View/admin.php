@@ -1,478 +1,274 @@
 <?php
-require_once '../controllers/sessionCheck.php';
-if ($_SESSION['role'] !== 'admin') {
-    header("Location: login.php?error=unauthorized");
-    exit;
+session_start();
+require_once '../Model/database.php';
+
+// Check if user is logged in and is admin
+if(!isset($_SESSION['status']) || $_SESSION['user_role'] != 'Admin'){
+    header('location: auth.php?error=badrequest');
 }
 
-$username = $_SESSION['username'];
-$role = $_SESSION['role'];
-
-
-if (isset($_GET['logout'])) {
+// Handle logout
+if(isset($_REQUEST['logout'])){
     session_destroy();
-    setcookie("username", "", time() - 3600, "/");
-    setcookie("password", "", time() - 3600, "/");
-    header("Location: login.php");
-    exit;
+    header('location: auth.php');
 }
+
+// Get statistics
+$total_users_sql = "SELECT COUNT(*) as count FROM users";
+$total_users_result = mysqli_query($conn, $total_users_sql);
+$total_users = mysqli_fetch_assoc($total_users_result)['count'];
+
+$active_employers_sql = "SELECT COUNT(*) as count FROM users WHERE role = 'Employer'";
+$active_employers_result = mysqli_query($conn, $active_employers_sql);
+$active_employers = mysqli_fetch_assoc($active_employers_result)['count'];
+
+$job_listings_sql = "SELECT COUNT(*) as count FROM jobs WHERE status = 'Active'";
+$job_listings_result = mysqli_query($conn, $job_listings_sql);
+$job_listings = mysqli_fetch_assoc($job_listings_result)['count'];
+
+$applications_sql = "SELECT COUNT(*) as count FROM job_applications";
+$applications_result = mysqli_query($conn, $applications_sql);
+$applications = mysqli_fetch_assoc($applications_result)['count'];
+
+// Get users for management
+$users_sql = "SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC";
+$users_result = mysqli_query($conn, $users_sql);
+
+// Get recent jobs for reports
+$recent_jobs_sql = "SELECT j.title, u.name as company, j.location, j.created_at 
+                   FROM jobs j 
+                   JOIN users u ON j.employer_id = u.id 
+                   ORDER BY j.created_at DESC LIMIT 10";
+$recent_jobs_result = mysqli_query($conn, $recent_jobs_sql);
+
+// Get activity logs
+$activity_logs_sql = "SELECT user_name, action, created_at FROM activity_logs ORDER BY created_at DESC LIMIT 20";
+$activity_logs_result = mysqli_query($conn, $activity_logs_sql);
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title><?= ucfirst($role) ?> Dashboard</title>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="../Asset/sabid.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background-color: #f3f4f6;
-        }
-        .header {
-            background-color: #2563eb;
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 1000;
-        }
-        .header h2 {
-            margin: 0;
-        }
-        .logout-btn {
-            padding: 6px 12px;
-            border: none;
-            margin-right: 30px;
-            border-radius: 4px;
-            background-color: #ef4444;
-            color: white;
-            cursor: pointer;
-        }
-        .sidebar {
-            width: 220px;
-            background-color: #1e293b;
-            height: 100vh;
-            position: fixed;
-            top: 60px; 
-            left: 0;
-            padding-top: 20px;
-            color: white;
-        }
-        .sidebar ul {
-            list-style: none;
-            padding-left: 0;
-        }
-        .sidebar ul li {
-            padding: 12px 20px;
-            cursor: pointer;
-        }
-        .sidebar ul li:hover {
-            background-color: #334155;
-        }
-        .main {
-            margin-left: 220px;
-            padding: 80px 20px 20px; 
-        }
-        .card {
-            display: inline-block;
-            width: 200px;
-            margin: 10px;
-            padding: 15px;
-            background-color: white;
-            border-radius: 6px;
-            box-shadow: 0 0 6px #ccc;
-            text-align: center;
-            transition: transform 0.2s;
-        }
-        .card:hover {
-            transform: scale(1.05);
-        }
-        .card h3 {
-            margin: 10px 0;
-            font-size: 22px;
-            color: #2563eb;
-        }
-        .card p {
-            margin: 0;
-            color: #4b5563;
-        }
-        p[id$="Error"], .error {
-            color: red;
-            font-size: 14px;
-            margin: 4px 0;
-        }
-        .success {
-            color: green;
-            font-size: 14px;
-        }
-
-        /* Manage Users and Reports Styles */
-        .simple-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-            margin: 20px 0;
-            padding: 0 20px;
-        }
-
+        /* Fix table overflow in Current Users card */
         .simple-card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.2s ease;
+            overflow: hidden; /* Prevent content from overflowing */
         }
-
-        .simple-card:hover {
-            transform: translateY(-5px);
+        
+        /* Fixed height for manage users grid */
+        .manage-users-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 600px; /* Fixed height */
         }
-
-        .simple-card h4 {
-            margin: 0 0 20px 0;
-            color: #1e40af;
-            font-size: 18px;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 10px;
+        
+        /* Fixed size for Add New User card */
+        .add-user-card {
+            height: 100%;
+            overflow-y: auto;
         }
-
-        /* Form Styles */
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #374151;
-            font-weight: 500;
-        }
-
-        .input-group input,
-        .input-group select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-            transition: border-color 0.2s ease;
-        }
-
-        .input-group input:focus,
-        .input-group select:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-        }
-
-        .submit-btn {
-            background: #2563eb;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: 500;
-            width: 100%;
-            transition: background-color 0.2s ease;
-        }
-
-        .submit-btn:hover {
-            background: #1d4ed8;
-        }
-
-        /* Table Styles */
-        .simple-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 10px;
-        }
-
-        .simple-table th,
-        .simple-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .simple-table th {
-            background: #f8fafc;
-            font-weight: 600;
-            color: #374151;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.05em;
-        }
-
-        .simple-table tr:hover {
-            background-color: #f8fafc;
-        }
-
-        /* Badge Styles */
-        .role-badge, 
-        .status-badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            color: white;
-            display: inline-block;
-        }
-
-        .role-badge.admin { 
-            background: #818cf8;
-        }
-        .role-badge.employer { 
-            background: #34d399;
-        }
-        .role-badge.jobseeker { 
-            background: #fbbf24;
-        }
-        .status-badge.active { 
-            background: #22c55e;
-        }
-
-        /* Action Buttons */
-        .action-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-            margin-right: 6px;
-            transition: all 0.2s ease;
-        }
-
-        .action-btn.edit {
-            background: #2563eb;
-            color: white;
-        }
-
-        .action-btn.edit:hover {
-            background: #1d4ed8;
-        }
-
-        .action-btn.delete {
-            background: #dc2626;
-            color: white;
-        }
-
-        .action-btn.delete:hover {
-            background: #b91c1c;
-        }
-
-        /* Notification Styles */
-        .notification-list {
+        
+        /* Fixed size for Current Users card with scroll */
+        .current-users-card {
+            height: 100%;
             display: flex;
             flex-direction: column;
-            gap: 15px;
         }
-
-        .notification-item {
-            background: #fff;
-            border-left: 4px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 15px;
-            transition: all 0.2s ease;
-        }
-
-        .notification-item.unread {
-            border-left-color: #2563eb;
-            background-color: #f8fafc;
-        }
-
-        .notification-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .notification-type {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            color: white;
-        }
-
-        .notification-type.urgent { background-color: #dc2626; }
-        .notification-type.warning { background-color: #f59e0b; }
-        .notification-type.info { background-color: #3b82f6; }
-        .notification-type.success { background-color: #10b981; }
-
-        .notification-time {
-            color: #6b7280;
-            font-size: 12px;
-        }
-
-        .notification-content h5 {
-            margin: 0 0 8px 0;
-            color: #1f2937;
-            font-size: 16px;
-        }
-
-        .notification-content p {
-            margin: 0 0 15px 0;
-            color: #4b5563;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .notification-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .notification-actions .action-btn {
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .notification-actions .action-btn.approve {
-            background-color: #10b981;
-            color: white;
-        }
-
-        .notification-actions .action-btn.approve:hover {
-            background-color: #059669;
-        }
-
-        /* Stats Styles */
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            margin-top: 10px;
-        }
-
-        .stat-box {
-            text-align: center;
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            transition: transform 0.2s ease;
-        }
-
-        .stat-box:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        .stat-number {
-            display: block;
-            font-size: 28px;
-            font-weight: 600;
-            color: #2563eb;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            display: block;
-            font-size: 14px;
-            color: #64748b;
-            font-weight: 500;
-        }
-
-        /* Responsive Grid */
-        @media screen and (min-width: 768px) {
-            .simple-grid {
-                grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            }
-        }
-
-        /* Notification Styles */
-        .notification-list {
-            max-width: 800px;
-        }
-
-        .notification-item {
-            background: white;
-            padding: 15px;
-            margin-bottom: 15px;
+        
+        .table-container {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 500px; /* Fixed max height for scroll */
             border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: relative;
-            border-left: 4px solid #cbd5e1;
+            border: 1px solid #e5e7eb;
         }
-
-        .notification-item.unread {
-            border-left-color: #2563eb;
+        
+        .simple-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+            background: white;
+            font-size: 13px;
+        }
+        
+        .simple-table th,
+        .simple-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+        
+        .simple-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .simple-table tbody tr:hover {
             background-color: #f8fafc;
         }
-
-        .notification-item h4 {
-            margin: 0 0 10px 0;
-            color: #1e293b;
-            font-size: 16px;
+        
+        .simple-table .user-email {
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-
-        .notification-item p {
-            margin: 0 0 15px 0;
-            color: #64748b;
+        
+        .simple-table .user-name {
+            font-weight: 500;
+            color: #1f2937;
         }
-
-        .notification-time {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            color: #94a3b8;
-            font-size: 12px;
-        }
-
-        .action-btn {
-            padding: 6px 12px;
+        
+        /* Action buttons styling */
+        .simple-table .action-btn {
+            padding: 4px 8px;
+            margin: 2px;
+            font-size: 11px;
             border: none;
             border-radius: 4px;
-            background-color: #2563eb;
-            color: white;
             cursor: pointer;
-            margin-right: 10px;
-            font-size: 12px;
+            font-weight: 500;
         }
-
-        .action-btn:hover {
-            background-color: #1d4ed8;
+        
+        .simple-table .action-btn.edit {
+            background-color: #3b82f6;
+            color: white;
         }
-
-        .action-btn.approve {
-            background-color: #22c55e;
+        
+        .simple-table .action-btn.edit:hover {
+            background-color: #2563eb;
         }
-
-        .action-btn.approve:hover {
-            background-color: #16a34a;
-        }
-
-        .action-btn.reject {
+        
+        .simple-table .action-btn.delete {
             background-color: #ef4444;
+            color: white;
         }
-
-        .action-btn.reject:hover {
+        
+        .simple-table .action-btn.delete:hover {
             background-color: #dc2626;
         }
         
-        @media screen and (max-width: 600px) {
-            .sidebar {
-                position: relative;
-                width: 100%;
+        /* Role and status badges */
+        .simple-table .role-badge,
+        .simple-table .status-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        .simple-table .role-badge.admin {
+            background-color: #dc2626;
+            color: white;
+        }
+        
+        .simple-table .role-badge.employer {
+            background-color: #059669;
+            color: white;
+        }
+        
+        .simple-table .role-badge.jobseeker {
+            background-color: #0891b2;
+            color: white;
+        }
+        
+        .simple-table .status-badge.active {
+            background-color: #22c55e;
+            color: white;
+        }
+        
+        /* Custom scrollbar styling */
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .table-container::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+        
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+        
+        /* Recently Posted Jobs table styling */
+        .job-title {
+            font-weight: 600;
+            color: #1e40af;
+        }
+        
+        .company-name {
+            font-weight: 500;
+            color: #059669;
+        }
+        
+        .job-location {
+            color: #6b7280;
+        }
+        
+        .job-salary {
+            font-weight: 600;
+            color: #dc2626;
+        }
+        
+        .posted-date {
+            color: #4b5563;
+            font-size: 12px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .manage-users-grid {
+                grid-template-columns: 1fr;
                 height: auto;
-                padding-top: 10px;
             }
-            .main {
-                margin-left: 0;
-                padding: 100px 10px 20px;
+            
+            .current-users-card,
+            .add-user-card {
+                height: 400px;
+            }
+            
+            .table-container {
+                max-height: 300px;
+            }
+            
+            .simple-table {
+                font-size: 12px;
+            }
+            
+            .simple-table th,
+            .simple-table td {
+                padding: 8px 6px;
+            }
+            
+            .simple-table .user-email {
+                max-width: 120px;
+            }
+            
+            .simple-table .action-btn {
+                padding: 3px 6px;
+                font-size: 10px;
+                margin: 1px;
             }
         }
     </style>
@@ -480,7 +276,7 @@ if (isset($_GET['logout'])) {
 <body>
 
 <div class="header">
-    <h2><?= ucfirst($role) ?> Dashboard - Welcome, <?= htmlspecialchars($username) ?></h2>
+    <h2>Admin Dashboard - Welcome, <?=$_SESSION['user_name']?></h2>
     <button class="logout-btn" onclick="window.location.href='?logout=true'">Logout</button>
 </div>
 
@@ -499,19 +295,19 @@ if (isset($_GET['logout'])) {
     <div id="overview">
         <h3>Overview</h3>
         <div class="card">
-            <h3>10</h3>
+            <h3><?=$total_users?></h3>
             <p>Total Users</p>
         </div>
         <div class="card">
-            <h3>5</h3>
+            <h3><?=$active_employers?></h3>
             <p>Active Employers</p>
         </div>
         <div class="card">
-            <h3>20</h3>
+            <h3><?=$job_listings?></h3>
             <p>Job Listings</p>
         </div>
         <div class="card">
-            <h3>15</h3>
+            <h3><?=$applications?></h3>
             <p>Applications</p>
         </div>
     </div>
@@ -520,19 +316,25 @@ if (isset($_GET['logout'])) {
         <h3>Manage Users</h3>
         <div id="messageArea"></div>
 
-        <div class="simple-grid">
-            <div class="simple-card">
+        <div class="manage-users-grid">
+            <div class="simple-card add-user-card">
                 <h4>Add New User</h4>
                 <form id="addUserForm" onsubmit="return handleAddUser(event)">
                     <div class="input-group">
-                        Username:
-                        <input type="text" id="newUsername" name="newUsername" placeholder="Enter username">
+                        <label for="newUsername">Username:</label>
+                        <input type="text" id="newUsername" name="newUsername" placeholder="Enter username" required>
                         <p id="usernameError" class="error"></p>
                     </div>
 
                     <div class="input-group">
-                        Role:
-                        <select id="newRole" name="newRole">
+                        <label for="newEmail">Email:</label>
+                        <input type="email" id="newEmail" name="newEmail" placeholder="Enter email" required>
+                        <p id="emailError" class="error"></p>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="newRole">Role:</label>
+                        <select id="newRole" name="newRole" required>
                             <option value="">Select Role</option>
                             <option value="admin">Admin</option>
                             <option value="employer">Employer</option>
@@ -541,48 +343,86 @@ if (isset($_GET['logout'])) {
                         <p id="roleError" class="error"></p>
                     </div>
 
+                    <div class="input-group">
+                        <label for="newPassword">Password:</label>
+                        <input type="password" id="newPassword" name="newPassword" placeholder="Enter password" required>
+                        <p id="passwordError" class="error"></p>
+                    </div>
+
                     <button type="submit" class="submit-btn">Add User</button>
                 </form>
             </div>
 
-            <div class="simple-card">
+            <div class="simple-card current-users-card">
                 <h4>Current Users</h4>
-                <table class="simple-table">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Sabid</td>
-                            <td><span class="role-badge employer">Employer</span></td>
-                            <td><span class="status-badge active">Active</span></td>
-                            <td>
-                                <button class="action-btn edit">Edit</button>
-                                <button class="action-btn delete" onclick="deleteUser(this)">Delete</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Abid</td>
-                            <td><span class="role-badge jobseeker">Job Seeker</span></td>
-                            <td><span class="status-badge active">Active</span></td>
-                            <td>
-                                <button class="action-btn edit">Edit</button>
-                                <button class="action-btn delete" onclick="deleteUser(this)">Delete</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>admin</td>
-                            <td><span class="role-badge admin">Admin</span></td>
-                            <td><span class="status-badge active">Active</span></td>
-                            <td><em style="color: #64748b;">Protected</em></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table class="simple-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <?php while($user = mysqli_fetch_assoc($users_result)): ?>
+                                <tr data-id="<?=$user['id']?>">
+                                    <td class="user-name"><?=$user['name']?></td>
+                                    <td class="user-email"><?=$user['email']?></td>
+                                    <td><span class="role-badge <?=strtolower($user['role'])?>"><?=$user['role']?></span></td>
+                                    <td><span class="status-badge active">Active</span></td>
+                                    <td>
+                                        <?php if ($user['role'] != 'Admin'): ?>
+                                            <button class="action-btn edit" onclick="editUser(<?=$user['id']?>)">Edit</button>
+                                            <button class="action-btn delete" onclick="deleteUser(this, <?=$user['id']?>)">Delete</button>
+                                        <?php else: ?>
+                                            <em style="color: #64748b;">Protected</em>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit User Modal -->
+        <div id="editUserModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; width: 400px; max-width: 90%;">
+                <h4 style="margin-top: 0;">Edit User</h4>
+                <form id="editUserForm" onsubmit="return handleEditUser(event)">
+                    <input type="hidden" id="editUserId">
+                    
+                    <div class="input-group">
+                        <label for="editUsername">Username:</label>
+                        <input type="text" id="editUsername" name="editUsername" required>
+                        <p id="editUsernameError" class="error"></p>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="editEmail">Email:</label>
+                        <input type="email" id="editEmail" name="editEmail" required>
+                        <p id="editEmailError" class="error"></p>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="editRole">Role:</label>
+                        <select id="editRole" name="editRole" required>
+                            <option value="admin">Admin</option>
+                            <option value="employer">Employer</option>
+                            <option value="jobseeker">Job Seeker</option>
+                        </select>
+                        <p id="editRoleError" class="error"></p>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="submit" class="submit-btn" style="width: auto; flex: 1;">Update User</button>
+                        <button type="button" onclick="closeEditModal()" class="submit-btn" style="width: auto; flex: 1; background: #6b7280;">Cancel</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -594,15 +434,15 @@ if (isset($_GET['logout'])) {
                 <h4>Quick Statistics</h4>
                 <div class="stats-container">
                     <div class="stat-box">
-                        <span class="stat-number">150</span>
+                        <span class="stat-number"><?=$total_users?></span>
                         <span class="stat-label">Total Users</span>
                     </div>
                     <div class="stat-box">
-                        <span class="stat-number">75</span>
+                        <span class="stat-number"><?=$job_listings?></span>
                         <span class="stat-label">Active Jobs</span>
                     </div>
                     <div class="stat-box">
-                        <span class="stat-number">324</span>
+                        <span class="stat-number"><?=$applications?></span>
                         <span class="stat-label">Applications</span>
                     </div>
                 </div>
@@ -610,36 +450,54 @@ if (isset($_GET['logout'])) {
 
             <div class="simple-card">
                 <h4>Recently Posted Jobs</h4>
-                <table class="simple-table">
-                    <thead>
-                        <tr>
-                            <th>Job Title</th>
-                            <th>Company</th>
-                            <th>Location</th>
-                            <th>Posted Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Senior Web Developer</td>
-                            <td>AlgoTech</td>
-                            <td>Dhaka</td>
-                            <td>2025-09-01</td>
-                        </tr>
-                        <tr>
-                            <td>UI/UX Designer</td>
-                            <td>AlgoTech IT</td>
-                            <td>Chittagong</td>
-                            <td>2025-08-30</td>
-                        </tr>
-                        <tr>
-                            <td>PHP Developer</td>
-                            <td>SilkVally</td>
-                            <td>Dhaka</td>
-                            <td>2025-08-29</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table class="simple-table">
+                        <thead>
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Company</th>
+                                <th>Location</th>
+                                <th>Salary</th>
+                                <th>Posted Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php 
+                            if(mysqli_num_rows($recent_jobs_result) > 0):
+                                while($job = mysqli_fetch_assoc($recent_jobs_result)): 
+                            ?>
+                                <tr>
+                                    <td class="job-title"><?=$job['title']?></td>
+                                    <td class="company-name"><?=$job['company']?></td>
+                                    <td class="job-location"><?=$job['location']?></td>
+                                    <td class="job-salary">
+                                        <?php 
+                                        // Get salary from jobs table
+                                        $job_salary_sql = "SELECT salary FROM jobs WHERE title = '".$job['title']."' AND employer_id = (SELECT id FROM users WHERE name = '".$job['company']."') LIMIT 1";
+                                        $salary_result = mysqli_query($conn, $job_salary_sql);
+                                        if(mysqli_num_rows($salary_result) > 0) {
+                                            $salary_row = mysqli_fetch_assoc($salary_result);
+                                            echo $salary_row['salary'];
+                                        } else {
+                                            echo "Not specified";
+                                        }
+                                        ?>
+                                    </td>
+                                    <td class="posted-date"><?=date('M d, Y', strtotime($job['created_at']))?></td>
+                                </tr>
+                            <?php 
+                                endwhile;
+                            else: 
+                            ?>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: #64748b; font-style: italic; padding: 20px;">
+                                        No jobs have been posted yet.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -734,6 +592,7 @@ if (isset($_GET['logout'])) {
                             <td><span class="role-badge jobseeker">System</span></td>
                             <td>Daily backup completed</td>
                         </tr>
+
                         <tr>
                             <td>2025-09-03 15:15</td>
                             <td>admin</td>
@@ -748,67 +607,39 @@ if (isset($_GET['logout'])) {
 
     <div id="dataExport" style="display:none;">
         <h3>Data Export</h3>
-        <div class="simple-grid">
-            <div class="simple-card">
-                <h4>Export Data</h4>
-                <form id="exportForm" onsubmit="return handleExport(event)">
-                    <div class="input-group">
-                        Select Data to Export:
-                        <select id="exportType" name="exportType">
-                            <option value="">--Select Type--</option>
-                            <option value="users">Users Data</option>
-                            <option value="jobs">Jobs Data</option>
-                            <option value="applications">Applications Data</option>
-                            <option value="logs">Activity Logs</option>
-                        </select>
-                        <p id="exportTypeError" class="error"></p>
-                    </div>
-                    <div class="input-group">
-                        Export Format:
-                        <select id="exportFormat" name="exportFormat">
-                            <option value="">--Select Format--</option>
-                            <option value="csv">CSV</option>
-                            <option value="excel">Excel</option>
-                            <option value="pdf">PDF</option>
-                        </select>
-                        <p id="exportFormatError" class="error"></p>
-                    </div>
-                    <button type="submit" class="submit-btn">Generate Export</button>
-                </form>
-            </div>
-
-            <div class="simple-card">
-                <h4>Export History</h4>
-                <table class="simple-table">
-                    <thead>
-                        <tr>
-                            <th>Date & Time</th>
-                            <th>Type</th>
-                            <th>Format</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="exportHistoryBody">
-                        <tr>
-                            <td>2025-09-03 15:30</td>
-                            <td>Users Data</td>
-                            <td>CSV</td>
-                            <td><span class="status-badge active">Completed</span></td>
-                        </tr>
-                        <tr>
-                            <td>2025-09-03 14:45</td>
-                            <td>Jobs Data</td>
-                            <td>Excel</td>
-                            <td><span class="status-badge active">Completed</span></td>
-                        </tr>
-                        <tr>
-                            <td>2025-09-03 14:00</td>
-                            <td>Activity Logs</td>
-                            <td>PDF</td>
-                            <td><span class="status-badge active">Completed</span></td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div class="simple-card" style="max-width: 500px; margin: 0 auto;">
+            <h4>Export Data</h4>
+            <form id="exportForm" onsubmit="return exportData(event)">
+                <div class="input-group">
+                    <label for="exportType">Select Data to Export:</label>
+                    <select id="exportType" name="exportType" required>
+                        <option value="">Select Type</option>
+                        <option value="users">Users Data</option>
+                        <option value="jobs">Jobs Data</option>
+                        <option value="applications">Applications Data</option>
+                        <option value="logs">Activity Logs</option>
+                    </select>
+                    <p id="exportTypeError" class="error"></p>
+                </div>
+                
+                <div class="input-group">
+                    <label for="exportFormat">Export Format:</label>
+                    <select id="exportFormat" name="exportFormat" required>
+                        <option value="">Select Format</option>
+                        <option value="excel">Excel File</option>
+                        <option value="pdf">PDF Document</option>
+                    </select>
+                    <p id="exportFormatError" class="error"></p>
+                </div>
+                
+                <button type="submit" class="submit-btn">Export & Download</button>
+            </form>
+            
+            <div id="exportMessage" style="margin-top: 20px; display: none;">
+                <p style="color: #059669; background: #f0fdf4; padding: 10px; border-radius: 5px; text-align: center;">
+                    <strong>Export completed!</strong><br>
+                    File downloaded successfully.
+                </p>
             </div>
         </div>
     </div>
@@ -827,22 +658,200 @@ function showSection(section) {
 
 function validateAddUser() {
     const username = document.getElementById('newUsername').value.trim();
+    const email = document.getElementById('newEmail').value.trim();
     const role = document.getElementById('newRole').value;
+    const password = document.getElementById('newPassword').value;
 
     let valid = true;
+    
+    // Clear previous errors
     document.getElementById('usernameError').textContent = "";
+    document.getElementById('emailError').textContent = "";
     document.getElementById('roleError').textContent = "";
+    document.getElementById('passwordError').textContent = "";
 
     if (username === "") {
         document.getElementById('usernameError').textContent = "Username is required.";
+        valid = false;
+    }
+    if (email === "") {
+        document.getElementById('emailError').textContent = "Email is required.";
         valid = false;
     }
     if (role === "") {
         document.getElementById('roleError').textContent = "Role must be selected.";
         valid = false;
     }
+    if (password === "") {
+        document.getElementById('passwordError').textContent = "Password is required.";
+        valid = false;
+    }
 
     return valid;
+}
+
+// CRUD Operations for Users
+let userIdCounter = 4; // Starting from 4 since we have 3 existing users
+
+function handleAddUser(event) {
+    event.preventDefault();
+    if (!validateAddUser()) return false;
+
+    const formData = new FormData();
+    formData.append('action', 'add_user');
+    formData.append('name', document.getElementById('newUsername').value.trim());
+    formData.append('email', document.getElementById('newEmail').value.trim());
+    formData.append('password', document.getElementById('newPassword').value);
+    formData.append('role', document.getElementById('newRole').value);
+
+    fetch('../Controller/admin_actions.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            document.getElementById('messageArea').innerHTML = 
+                `<p class="error">${data.error}</p>`;
+        }
+    });
+
+    return false;
+}
+
+function editUser(userId) {
+    const row = document.querySelector(`tr[data-id="${userId}"]`);
+    if (!row) return;
+    
+    const username = row.querySelector('.user-name').textContent;
+    const email = row.querySelector('.user-email').textContent;
+    const roleSpan = row.querySelector('.role-badge');
+    const role = roleSpan.textContent.toLowerCase();
+
+    // Populate edit form
+    document.getElementById('editUserId').value = userId;
+    document.getElementById('editUsername').value = username;
+    document.getElementById('editEmail').value = email;
+    document.getElementById('editRole').value = role;
+    
+    // Show edit modal
+    document.getElementById('editUserModal').style.display = 'block';
+}
+
+function handleEditUser(event) {
+    event.preventDefault();
+    
+    const userId = document.getElementById('editUserId').value;
+    const username = document.getElementById('editUsername').value.trim();
+    const email = document.getElementById('editEmail').value.trim();
+    const role = document.getElementById('editRole').value;
+    
+    // Clear previous errors
+    document.getElementById('editUsernameError').textContent = "";
+    document.getElementById('editEmailError').textContent = "";
+    document.getElementById('editRoleError').textContent = "";
+    
+    // Validate
+    let valid = true;
+    if (username === "") {
+        document.getElementById('editUsernameError').textContent = "Username is required.";
+        valid = false;
+    }
+    if (email === "") {
+        document.getElementById('editEmailError').textContent = "Email is required.";
+        valid = false;
+    }
+    if (role === "") {
+        document.getElementById('editRoleError').textContent = "Role must be selected.";
+        valid = false;
+    }
+    // extra validation
+    if(password === ""){
+        document.getElementById('editPasswordByid').textContent = "password must be selected";
+    }
+    if(loggedIn){
+        document.getElementById('time of login').textContent = "text must be in password";
+    }
+    if(userRole === ""){
+        document.getElementById('invalid Role Selected').textContent = "Select a valid role";
+    }
+    
+    if (!valid) return false;
+    
+    const formData = new FormData();
+    formData.append('action', 'update_user');
+    formData.append('user_id', userId);
+    formData.append('name', username);
+    formData.append('email', email);
+    formData.append('role', role);
+
+    fetch('../Controller/admin_actions.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error);
+        }
+    });
+    
+    return false;
+}
+
+function deleteUser(button, userId) {
+    const row = document.querySelector(`tr[data-id="${userId}"]`);
+    if (!row) return;
+    
+    const username = row.querySelector('.user-name').textContent;
+    const roleSpan = row.querySelector('.role-badge');
+    
+    // Don't allow admin deletion
+    if (roleSpan.classList.contains('admin')) {
+        alert('Admin users cannot be deleted!');
+        return;
+    }
+
+    if (confirm(`Are you sure you want to delete user "${username}"?`)) {
+        const formData = new FormData();
+        formData.append('action', 'delete_user');
+        formData.append('user_id', userId);
+
+        fetch('../Controller/admin_actions.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error);
+            }
+        });
+    }
+}
+
+function closeEditModal() {
+    document.getElementById('editUserModal').style.display = 'none';
+}
+
+function logActivity(description, type) {
+    const activityLogBody = document.getElementById('activityLogBody');
+    const newLogRow = document.createElement('tr');
+    const now = new Date().toLocaleString();
+    
+    newLogRow.innerHTML = `
+        <td>${now}</td>
+        <td>Admin</td>
+        <td><span class="role-badge admin">${type}</span></td>
+        <td>${description}</td>
+    `;
+    activityLogBody.insertBefore(newLogRow, activityLogBody.firstChild);
 }
 
 function filterLogs(event) {
@@ -878,119 +887,54 @@ function filterLogs(event) {
     return false;
 }
 
-function deleteUser(button) {
-    const row = button.closest('tr');
-    const username = row.cells[0].textContent;
-    const role = row.cells[1].textContent;
-    
-    // Don't allow admin deletion
-    if (role.includes('Admin')) {
-        alert('Admin users cannot be deleted!');
-        return;
-    }
-
-    if (confirm(`Are you sure you want to temporarily delete user "${username}"?`)) {
-        // Hide the row instead of removing it
-        row.style.display = 'none';
-        
-        // Change user count in overview
-        const totalUsersElement = document.querySelector('#overview .card:first-child h3');
-        const currentCount = parseInt(totalUsersElement.textContent);
-        totalUsersElement.textContent = currentCount - 1;
-
-        // Add to activity logs
-        const activityLogBody = document.getElementById('activityLogBody');
-        const newLogRow = document.createElement('tr');
-        const now = new Date().toLocaleString();
-        newLogRow.innerHTML = `
-            <td>${now}</td>
-            <td>${document.querySelector('.header h2').textContent.split(',')[1].trim()}</td>
-            <td><span class="role-badge admin">User</span></td>
-            <td>Temporarily deleted user: ${username}</td>
-        `;
-        activityLogBody.insertBefore(newLogRow, activityLogBody.firstChild);
-
-        // Add notification
-        const notificationList = document.querySelector('.notification-list');
-        const newNotification = document.createElement('div');
-        newNotification.className = 'notification-item unread';
-        newNotification.innerHTML = `
-            <span class="notification-time">Just now</span>
-            <h4>User Deleted</h4>
-            <p>User "${username}" has been temporarily deleted.</p>
-            <button class="action-btn" onclick="restoreUser('${username}', this)">Restore User</button>
-        `;
-        notificationList.insertBefore(newNotification, notificationList.firstChild);
-    }
-}
-
-function restoreUser(username, button) {
-    // Find and show the hidden row
-    const rows = document.querySelectorAll('.simple-table tr');
-    for (let row of rows) {
-        if (row.cells[0].textContent === username) {
-            row.style.display = '';
-            
-            // Update user count in overview
-            const totalUsersElement = document.querySelector('#overview .card:first-child h3');
-            const currentCount = parseInt(totalUsersElement.textContent);
-            totalUsersElement.textContent = currentCount + 1;
-
-            // Add to activity logs
-            const activityLogBody = document.getElementById('activityLogBody');
-            const newLogRow = document.createElement('tr');
-            const now = new Date().toLocaleString();
-            newLogRow.innerHTML = `
-                <td>${now}</td>
-                <td>${document.querySelector('.header h2').textContent.split(',')[1].trim()}</td>
-                <td><span class="role-badge admin">User</span></td>
-                <td>Restored user: ${username}</td>
-            `;
-            activityLogBody.insertBefore(newLogRow, activityLogBody.firstChild);
-
-            // Remove the notification
-            const notification = button.closest('.notification-item');
-            notification.remove();
-            break;
-        }
-    }
-}
-
-function handleExport(event) {
+function exportData(event) {
     event.preventDefault();
-    const type = document.getElementById('exportType').value;
-    const format = document.getElementById('exportFormat').value;
-    let valid = true;
-
+    
+    const exportType = document.getElementById('exportType').value;
+    const exportFormat = document.getElementById('exportFormat').value;
+    
+    // Clear previous errors
     document.getElementById('exportTypeError').textContent = "";
     document.getElementById('exportFormatError').textContent = "";
-
-    if (type === "") {
-        document.getElementById('exportTypeError').textContent = "Please select data type to export";
-        valid = false;
-    }
-
-    if (format === "") {
-        document.getElementById('exportFormatError').textContent = "Please select export format";
-        valid = false;
-    }
-
-    if (!valid) return false;
-
-    const tbody = document.getElementById('exportHistoryBody');
-    const newRow = tbody.insertRow(0);
-    const now = new Date().toLocaleString();
     
-    newRow.innerHTML = `
-        <td>${now}</td>
-        <td>${document.getElementById('exportType').options[document.getElementById('exportType').selectedIndex].text}</td>
-        <td>${format.toUpperCase()}</td>
-        <td><span class="status-badge active">Completed</span></td>
-    `;
-
-    alert(`Exporting ${type} data in ${format.toUpperCase()} format...`);
+    // Simple validation
+    if (exportType === "") {
+        document.getElementById('exportTypeError').textContent = "Please select data type to export.";
+        return false;
+    }
     
-    document.getElementById('exportForm').reset();   // Reset form
+    if (exportFormat === "") {
+        document.getElementById('exportFormatError').textContent = "Please select export format.";
+        return false;
+    }
+    
+    // Create a simple form and submit it
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '../Controller/export_handler.php';
+    form.target = '_blank';
+    
+    const typeInput = document.createElement('input');
+    typeInput.type = 'hidden';
+    typeInput.name = 'export_type';
+    typeInput.value = exportType;
+    form.appendChild(typeInput);
+    
+    const formatInput = document.createElement('input');
+    formatInput.type = 'hidden';
+    formatInput.name = 'export_format';
+    formatInput.value = exportFormat;
+    form.appendChild(formatInput);
+    
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+    
+    // Show success message
+    document.getElementById('exportMessage').style.display = 'block';
+    setTimeout(function() {
+        document.getElementById('exportMessage').style.display = 'none';
+    }, 3000);
     
     return false;
 }

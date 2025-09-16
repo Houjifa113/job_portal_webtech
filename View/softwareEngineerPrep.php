@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Software Engineer Prep Tips</title>
+</head>
+
+<style>
+    body {
+        background-color: #252525;
+        font-family: Arial, sans-serif;
+        color: white;
+    }
+
+    .standardTable {
+        width: 80%;
+        border: 1px solid #FF0000;
+        border-radius: 20px;
+        padding: 3%;
+        background-color: #333333;
+        margin: 10%;
+        text-align: center;
+    }
+
+    .standardTable td {
+        padding: 8px 10px;
+        border: none;
+    }
+
+    .tips-button {
+        background-color: #FF0000;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        width: 70%;
+    }
+</style>
+<body>
+    <a href="./home.php"><input type="button" value="Home" id="home" class="tips-button" style="position: absolute;left: 2%;top: 2%;width: 8%;"></a>
+    <table class="standardTable">
+        <tr>
+            <td style="padding: 3%; background-color: red; color: azure; text-align: left;" colspan="2">
+                <b>Software Engineer Prep Tips</b>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 3%;">Master data structures and algorithms (arrays, linked lists, trees, sorting, searching)</td>
+        </tr>
+        <tr>
+            <td style="padding: 3%;">Practice coding problems on platforms like LeetCode, HackerRank, or CodeSignal</td>
+        </tr>
+        <tr>
+            <td style="padding: 3%;">Understand object-oriented programming concepts (inheritance, polymorphism, encapsulation)</td>
+        </tr>
+        <tr>
+            <td style="padding: 3%;">Learn version control systems (Git, GitHub basics)</td>
+        </tr>
+        <tr>
+            <td style="padding: 3%;">Familiarize yourself with system design fundamentals (scalability, databases, APIs)</td>
+        </tr>
+        <tr>
+            <td style="padding: 3%;">Work on personal or open-source projects to build a portfolio</td>
+        </tr>
+        <tr>
+            <td style="padding: 3%;">Review common software engineering interview questions</td>
+        </tr>
+        <tr>
+            <td style="padding: 3%;">Practice explaining your code and thought process clearly</td>
+        </tr>
+        <tr>
+            <td style="padding: 3%;">Study software development methodologies (Agile, Scrum)</td>
+        </tr>
+        <tr>
+            <td style="padding: 3%;">Network with other engineers and join relevant communities</td>
+        </tr>
+    </table>
+
+    <script src="../asset/script.js"></script>
+</body>
+</html>

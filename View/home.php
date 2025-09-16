@@ -1,13 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home</title>
-</head>
-<body>
-  <form action="../controller/searchcontroller.php" method="POST">
-    <input type="submit" name="submit" value="Go to Search Page">
-  </form>
-</body>
-</html>
+<?php
+    session_start();
+    if(isset($_SESSION['status'])){
+        if($_SESSION['status'] != 'valid'){
+            header('location: login.php?error=badrequest');
+        }
+    }else{
+        header('location: login.php?error=badrequest');
+    }
+
+    if(!isset($_COOKIE['status'])){
+        header('location: login.php?error=badrequest');
+    }
+    header('location: ./dashboard.php');
+
+?>
